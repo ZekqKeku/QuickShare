@@ -1,0 +1,18 @@
+app-id: com.quickshare.app
+runtime: org.kde.Platform
+runtime-version: '6.6'
+sdk: org.kde.Sdk
+command: QuickShare
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --filesystem=host
+modules:
+  - name: quickshare
+    buildsystem: cmake-ninja
+    sources:
+      - type: dir
+        path: ..

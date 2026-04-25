@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=QuickShare
+Comment=Quickly share files via Pixeldrain
+Exec=QuickShare %U
+Icon=com.quickshare.app
+Terminal=false
+Type=Application
+Categories=Utility;Network;
+MimeType=application/octet-stream;
+Actions=Share;
+
+[Desktop Action Share]
+Name=Share via QuickShare (Headless)
+Exec=QuickShare %U

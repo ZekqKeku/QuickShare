@@ -1,0 +1,31 @@
+# Unify line endings (LF) across all systems (Mac/Win/Linux) - crucial for C++ and Qt
+* text=auto eol=lf
+
+# Explicitly declare source files
+*.cpp text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.c text eol=lf
+*.mm text eol=lf
+*.m text eol=lf
+
+# Explicitly declare build configurations / CI
+CMakeLists.txt text eol=lf
+*.cmake text eol=lf
+CMakePresets.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Desktop / Flatpak Config
+*.desktop text eol=lf
+
+# UI Files (Qt Designer) - text/xml
+*.ui text eol=lf
+
+# GitHub statistics (Linguist) markings to ensure the project appears as "C++" in portfolio
+# - Ignore configuration and resource files from altering the C++ percentage in the repo
+*.yml linguist-vendored
+*.yaml linguist-vendored
+*.json linguist-vendored
+*.desktop linguist-vendored
+*.ui linguist-vendored
