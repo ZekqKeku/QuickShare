@@ -14,6 +14,12 @@ void SystemUtils::setAutoStart(bool enabled) {
     QString appName = "QuickShare";
     QString appPath = QCoreApplication::applicationFilePath();
 
+#ifdef Q_OS_MAC
+    if (appPath.contains(".app/Contents/MacOS/")) {
+        appPath = appPath.left(appPath.lastIndexOf(".app/Contents/MacOS/") + 4);
+    }
+#endif
+
 #ifdef Q_OS_WIN
     QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
     if (enabled) {
