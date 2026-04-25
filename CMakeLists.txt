@@ -15,6 +15,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+if(MSVC)
+    add_compile_options(/Zc:__cplusplus)
+endif()
+
 if(APPLE AND EXISTS "/opt/homebrew/opt/qt")
     list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qt")
 elseif(APPLE AND EXISTS "/usr/local/opt/qt")

@@ -16,11 +16,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            qt_arch: win64_mingw
+            qt_arch: win64_msvc2019_64
             artifact_name: QuickShare-Windows.exe
             build_folder: build
           - os: macos-latest
-            qt_arch: mac64_clang
+            qt_arch: clang_64
             artifact_name: QuickShare-macOS.zip
             build_folder: build
           - os: ubuntu-latest
