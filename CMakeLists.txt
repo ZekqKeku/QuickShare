@@ -34,6 +34,7 @@ add_executable(QuickShare WIN32 MACOSX_BUNDLE
     src/network/PixeldrainUploader.h src/network/PixeldrainUploader.cpp
     src/utils/Archiver.h src/utils/Archiver.cpp
     src/utils/NameGenerator.h src/utils/NameGenerator.cpp
+    src/utils/SystemUtils.h src/utils/SystemUtils.cpp
 )
 
 target_compile_definitions(QuickShare PRIVATE 
@@ -44,11 +45,18 @@ target_compile_definitions(QuickShare PRIVATE
 )
 
 if(APPLE)
+    target_sources(QuickShare PRIVATE src/utils/MacUtils.mm)
     set_target_properties(QuickShare PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.quickshare.app"
         MACOSX_BUNDLE_BUNDLE_NAME "${APP_NAME}"
         MACOSX_BUNDLE_BUNDLE_VERSION "${APP_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${APP_VERSION}"
+    )
+    
+    add_custom_command(TARGET QuickShare POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/resources/mac/Share via QuickShare.workflow"
+        "$<TARGET_FILE_DIR:QuickShare>/../Library/Services/Share via QuickShare.workflow"
     )
 elseif(WIN32)
 endif()

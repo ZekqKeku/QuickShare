@@ -1,9 +1,7 @@
-name: Build QuickShare
+name: Build and Release QuickShare
 
 on:
   push:
-    branches: [ "main", "master" ]
-  pull_request:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
@@ -17,20 +15,29 @@ jobs:
         include:
           - os: windows-latest
             qt_arch: win64_msvc2019_64
-            artifact_name: QuickShare-Windows.exe
             build_folder: build
+            platform: Windows
           - os: macos-latest
             qt_arch: clang_64
-            artifact_name: QuickShare-macOS.zip
             build_folder: build
+            platform: macOS
           - os: ubuntu-latest
             qt_arch: gcc_64
-            artifact_name: QuickShare-Linux
             build_folder: build
+            platform: Linux
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Get version info from manifest.json
+      id: manifest
+      shell: bash
+      run: |
+        NAME=$(python3 -c "import json; print(json.load(open('manifest.json'))['name'])")
+        VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+        STATUS=$(python3 -c "import json; print(json.load(open('manifest.json'))['status'])")
+        echo "app_id=${NAME}-${STATUS}-${VERSION}" >> $GITHUB_OUTPUT
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
@@ -58,7 +65,7 @@ jobs:
         cd ${{ matrix.build_folder }}
         macdeployqt QuickShare.app
         codesign --force --deep --sign - QuickShare.app
-        ditto -c -k --keepParent QuickShare.app QuickShare-macOS.zip
+        ditto -c -k --keepParent QuickShare.app ${{ steps.manifest.outputs.app_id }}-macOS.zip
 
     - name: Package Windows Exe (windeployqt)
       if: runner.os == 'Windows'
@@ -70,25 +77,57 @@ jobs:
         move QuickShare.exe QuickShare-Release\
         move *.dll QuickShare-Release\
         move tls QuickShare-Release\
-        tar -a -c -f QuickShare-Windows.zip QuickShare-Release
+        tar -a -c -f ${{ steps.manifest.outputs.app_id }}-Windows.zip QuickShare-Release
 
-    - name: Upload Artifacts (macOS)
-      if: runner.os == 'macOS'
-      uses: actions/upload-artifact@v4
-      with:
-        name: QuickShare-macOS
-        path: ${{ matrix.build_folder }}/QuickShare-macOS.zip
-
-    - name: Upload Artifacts (Windows)
-      if: runner.os == 'Windows'
-      uses: actions/upload-artifact@v4
-      with:
-        name: QuickShare-Windows
-        path: ${{ matrix.build_folder }}\QuickShare-Windows.zip
-
-    - name: Upload Artifacts (Linux)
+    - name: Package Linux
       if: runner.os == 'Linux'
+      run: |
+        cd ${{ matrix.build_folder }}
+        zip -j ${{ steps.manifest.outputs.app_id }}-Linux.zip QuickShare
+
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: QuickShare-Linux
-        path: ${{ matrix.build_folder }}/QuickShare
+        name: artifact-${{ matrix.platform }}
+        path: |
+          ${{ matrix.build_folder }}/*.zip
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get version info from manifest.json
+      id: manifest
+      run: |
+        VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
+        STATUS=$(python3 -c "import json; print(json.load(open('manifest.json'))['status'])")
+        READY=$(python3 -c "import json; print(str(json.load(open('manifest.json'))['ready_for_release']).lower())")
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "status=${STATUS}" >> $GITHUB_OUTPUT
+        echo "tag=${STATUS}-v${VERSION}" >> $GITHUB_OUTPUT
+        echo "ready=${READY}" >> $GITHUB_OUTPUT
+
+    - name: Download all artifacts
+      if: steps.manifest.outputs.ready == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        path: all-artifacts
+        pattern: artifact-*
+        merge-multiple: true
+
+    - name: Create Release
+      if: steps.manifest.outputs.ready == 'true'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.manifest.outputs.tag }}
+        name: QuickShare ${{ steps.manifest.outputs.status }} v${{ steps.manifest.outputs.version }}
+        files: all-artifacts/*.zip
+        draft: false
+        prerelease: ${{ steps.manifest.outputs.status != 'stable' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

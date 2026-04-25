@@ -2,5 +2,6 @@
   "name": "QuickShare",
   "version": "0.0.1",
   "status": "mvp-alpha",
-  "description": "Quickly share files via Pixeldrain"
+  "description": "Quickly share files via Pixeldrain",
+  "ready_for_release": false
 }

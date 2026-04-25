@@ -10,6 +10,7 @@
 #include "../core/AppConfig.h"
 #include "../utils/Archiver.h"
 #include "../utils/NameGenerator.h"
+#include "../utils/SystemUtils.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), uploader(new PixeldrainUploader(this)) {
@@ -17,16 +18,42 @@ MainWindow::MainWindow(QWidget *parent)
     setAcceptDrops(true);
 
     ui->apiKeyEdit->setText(AppConfig::instance().apiKey());
+    ui->hideDockCheckBox->setChecked(AppConfig::instance().isHideInDock());
+    ui->autostartCheckBox->setChecked(AppConfig::instance().isAutoStart());
+
+#ifdef Q_OS_MAC
+    ui->hideDockCheckBox->setText("Hide in Dock");
+#else
+    ui->hideDockCheckBox->setText("Hide in Taskbar");
+#endif
+
     ui->progressBar->hide();
 
     connect(ui->saveBtn, &QPushButton::clicked, this, &MainWindow::onSaveSettings);
     connect(uploader, &PixeldrainUploader::progressChanged, this, &MainWindow::onUploadProgress);
     connect(uploader, &PixeldrainUploader::uploadFinished, this, &MainWindow::onUploadFinished);
     connect(uploader, &PixeldrainUploader::uploadError, this, &MainWindow::onUploadError);
+
+    applyDockSettings();
+    SystemUtils::registerContextMenu(true);
 }
 
 MainWindow::~MainWindow() {
     delete ui;
+}
+
+void MainWindow::applyDockSettings() {
+    bool hide = AppConfig::instance().isHideInDock();
+#ifdef Q_OS_MAC
+    setMacDockIconVisible(!hide);
+#else
+    if (hide) {
+        setWindowFlags(windowFlags() | Qt::Tool);
+    } else {
+        setWindowFlags(windowFlags() & ~Qt::Tool);
+    }
+    if (isVisible()) show();
+#endif
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
@@ -101,6 +128,13 @@ void MainWindow::startUpload(const QStringList &files) {
     }
 
     void MainWindow::onSaveSettings() {
-    AppConfig::instance().setApiKey(ui->apiKeyEdit->text());
-    ui->statusbar->showMessage("Settings saved", 2000);
+        AppConfig::instance().setApiKey(ui->apiKeyEdit->text());
+        AppConfig::instance().setHideInDock(ui->hideDockCheckBox->isChecked());
+        AppConfig::instance().setAutoStart(ui->autostartCheckBox->isChecked());
+
+        applyDockSettings();
+        SystemUtils::setAutoStart(ui->autostartCheckBox->isChecked());
+        SystemUtils::registerContextMenu(true);
+
+        ui->statusbar->showMessage("Settings saved", 2000);
     }

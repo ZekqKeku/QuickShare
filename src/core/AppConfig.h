@@ -14,6 +14,12 @@ public:
     void setPremiumMode(bool enabled);
     bool isPremiumMode() const;
 
+    void setHideInDock(bool enabled);
+    bool isHideInDock() const;
+
+    void setAutoStart(bool enabled);
+    bool isAutoStart() const;
+
 private:
     AppConfig();
     QSettings settings;

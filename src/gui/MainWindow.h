@@ -29,6 +29,7 @@ private:
     Ui::MainWindow *ui;
     PixeldrainUploader *uploader;
     void startUpload(const QStringList &files);
+    void applyDockSettings();
 };
 
 #endif

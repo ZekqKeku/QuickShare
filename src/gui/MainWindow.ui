@@ -69,6 +69,24 @@
       </property>
      </widget>
     </item>
+    <item>
+     <layout class="QHBoxLayout" name="checkboxLayout">
+      <item>
+       <widget class="QCheckBox" name="hideDockCheckBox">
+        <property name="text">
+         <string>Hide in Dock/Taskbar</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="autostartCheckBox">
+        <property name="text">
+         <string>Autostart</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar"/>
