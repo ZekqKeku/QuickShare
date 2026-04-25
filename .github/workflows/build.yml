@@ -39,7 +39,6 @@ jobs:
         host: ${{ matrix.os == 'windows-latest' && 'windows' || matrix.os == 'macos-latest' && 'mac' || 'linux' }}
         target: 'desktop'
         arch: ${{ matrix.qt_arch }}
-        modules: 'qtnetwork'
 
     - name: Install Linux Dependencies (Ubuntu only)
       if: runner.os == 'Linux'
