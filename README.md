@@ -1,5 +1,7 @@
 # QuickShare
 
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+
 > ⚠️ **EARLY DEVELOPMENT WARNING** ⚠️  
 > This project is currently in its early stages of development. Functionality is not guaranteed, and until this message is removed, the software should be considered unstable, potentially faulty, and prone to throwing errors. Use at your own risk!
 
@@ -44,3 +46,12 @@ Beyond solving a daily annoyance, this project serves as a hands-on technical sa
 - Developing robust, cross-platform desktop software using modern **C++** and **Qt 6**.
 - Orchestrating automated multi-os build pipelines and artifact generation using **GitHub Actions**.
 - Testing the limits and capabilities of Gemini CLI as an autonomous AI peer-programmer assistent throughout the entire software engineering lifecycle.
+
+## License
+
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
+
+- **Commercial Use:** Commercial use of this software is strictly restricted to the original author.
+- **Forks and Derivatives:** Any forks or derivative works must credit the original repository and maintain the same license.
+
+For the full legal text, see the [LICENSE](LICENSE) file.
