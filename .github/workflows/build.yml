@@ -4,6 +4,11 @@ on:
   push:
     branches: [ "main", "master" ]
   workflow_dispatch:
+    inputs:
+      force_release:
+        description: 'Force a release even if ready_for_release is false'
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -120,7 +125,12 @@ jobs:
       run: |
         VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
         STATUS=$(python3 -c "import json; print(json.load(open('manifest.json'))['status'])")
-        READY=$(python3 -c "import json; print(str(json.load(open('manifest.json'))['ready_for_release']).lower())")
+        READY_FILE=$(python3 -c "import json; print(str(json.load(open('manifest.json'))['ready_for_release']).lower())")
+        if [ "${{ github.event.inputs.force_release }}" == "true" ]; then
+          READY="true"
+        else
+          READY=$READY_FILE
+        fi
         echo "version=${VERSION}" >> $GITHUB_OUTPUT
         echo "status=${STATUS}" >> $GITHUB_OUTPUT
         echo "tag=${STATUS}-v${VERSION}" >> $GITHUB_OUTPUT
