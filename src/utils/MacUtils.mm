@@ -2,12 +2,18 @@
 
 #ifdef Q_OS_MAC
 #import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
 
 void setMacDockIconVisible(bool visible) {
-    if (visible) {
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-    } else {
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
-    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSApplicationActivationPolicy policy = visible ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory;
+        if ([NSApp activationPolicy] != policy) {
+            [NSApp setActivationPolicy:policy];
+            
+            if (visible) {
+                [NSApp activateIgnoringOtherApps:YES];
+            }
+        }
+    });
 }
 #endif

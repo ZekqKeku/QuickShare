@@ -65,25 +65,28 @@ jobs:
         cd ${{ matrix.build_folder }}
         macdeployqt QuickShare.app
         codesign --force --deep --sign - QuickShare.app
-        ditto -c -k --keepParent QuickShare.app ${{ steps.manifest.outputs.app_id }}-macOS.zip
+        mv QuickShare.app ${{ steps.manifest.outputs.app_id }}.app
+        ditto -c -k --keepParent ${{ steps.manifest.outputs.app_id }}.app ${{ steps.manifest.outputs.app_id }}-macOS.zip
 
     - name: Package Windows Exe (windeployqt)
       if: runner.os == 'Windows'
-      shell: cmd
+      shell: bash
       run: |
         cd ${{ matrix.build_folder }}
-        windeployqt.exe QuickShare.exe
-        mkdir QuickShare-Release
-        move QuickShare.exe QuickShare-Release\
-        move *.dll QuickShare-Release\
-        move tls QuickShare-Release\
-        tar -a -c -f ${{ steps.manifest.outputs.app_id }}-Windows.zip QuickShare-Release
+        ./windeployqt.exe QuickShare.exe || windeployqt.exe QuickShare.exe
+        mv QuickShare.exe ${{ steps.manifest.outputs.app_id }}.exe
+        mkdir -p ${{ steps.manifest.outputs.app_id }}-Release
+        mv ${{ steps.manifest.outputs.app_id }}.exe ${{ steps.manifest.outputs.app_id }}-Release/
+        mv *.dll ${{ steps.manifest.outputs.app_id }}-Release/ 2>/dev/null || true
+        mv tls ${{ steps.manifest.outputs.app_id }}-Release/ 2>/dev/null || true
+        zip -r ${{ steps.manifest.outputs.app_id }}-Windows.zip ${{ steps.manifest.outputs.app_id }}-Release
 
     - name: Package Linux
       if: runner.os == 'Linux'
       run: |
         cd ${{ matrix.build_folder }}
-        zip -j ${{ steps.manifest.outputs.app_id }}-Linux.zip QuickShare
+        mv QuickShare ${{ steps.manifest.outputs.app_id }}
+        zip -j ${{ steps.manifest.outputs.app_id }}-Linux.zip ${{ steps.manifest.outputs.app_id }}
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4

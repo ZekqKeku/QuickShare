@@ -22,13 +22,17 @@ void SystemUtils::setAutoStart(bool enabled) {
         settings.remove(appName);
     }
 #elif defined(Q_OS_MAC)
+    QString appPath = QCoreApplication::applicationFilePath();
     QString cmd;
     if (enabled) {
         cmd = QString("osascript -e 'tell application \"System Events\" to make login item at end with properties {path:\"%1\", hidden:false, name:\"%2\"}'").arg(appPath, appName);
     } else {
         cmd = QString("osascript -e 'tell application \"System Events\" to delete login item \"%1\"'").arg(appName);
     }
-    QProcess::execute(cmd);
+    
+    QProcess process;
+    process.start("bash", {"-c", cmd});
+    process.waitForFinished();
 #elif defined(Q_OS_LINUX)
     QString autostartDir = QDir::homePath() + "/.config/autostart";
     QDir().mkpath(autostartDir);
