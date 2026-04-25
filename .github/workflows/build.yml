@@ -57,7 +57,8 @@ jobs:
       run: |
         cd ${{ matrix.build_folder }}
         macdeployqt QuickShare.app
-        zip -r QuickShare-macOS.zip QuickShare.app
+        codesign --force --deep --sign - QuickShare.app
+        ditto -c -k --keepParent QuickShare.app QuickShare-macOS.zip
 
     - name: Package Windows Exe (windeployqt)
       if: runner.os == 'Windows'
