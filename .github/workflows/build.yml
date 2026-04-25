@@ -72,14 +72,25 @@ jobs:
       if: runner.os == 'Windows'
       shell: bash
       run: |
-        cd ${{ matrix.build_folder }}
-        ./windeployqt.exe QuickShare.exe || windeployqt.exe QuickShare.exe
-        mv QuickShare.exe ${{ steps.manifest.outputs.app_id }}.exe
-        mkdir -p ${{ steps.manifest.outputs.app_id }}-Release
-        mv ${{ steps.manifest.outputs.app_id }}.exe ${{ steps.manifest.outputs.app_id }}-Release/
-        mv *.dll ${{ steps.manifest.outputs.app_id }}-Release/ 2>/dev/null || true
-        mv tls ${{ steps.manifest.outputs.app_id }}-Release/ 2>/dev/null || true
-        zip -r ${{ steps.manifest.outputs.app_id }}-Windows.zip ${{ steps.manifest.outputs.app_id }}-Release
+        TARGET_EXE="build/Release/QuickShare.exe"
+        if [ ! -f "$TARGET_EXE" ]; then TARGET_EXE="build/QuickShare.exe"; fi
+        
+        windeployqt --release "$TARGET_EXE"
+        
+        APP_NAME_VER="${{ steps.manifest.outputs.app_id }}"
+        mkdir -p "${APP_NAME_VER}-Release"
+        
+        cp "$TARGET_EXE" "${APP_NAME_VER}-Release/${APP_NAME_VER}.exe"
+        
+        EXE_DIR=$(dirname "$TARGET_EXE")
+        cp "$EXE_DIR"/*.dll "${APP_NAME_VER}-Release/" 2>/dev/null || true
+        cp -r "$EXE_DIR"/platforms "${APP_NAME_VER}-Release/" 2>/dev/null || true
+        cp -r "$EXE_DIR"/styles "${APP_NAME_VER}-Release/" 2>/dev/null || true
+        cp -r "$EXE_DIR"/tls "${APP_NAME_VER}-Release/" 2>/dev/null || true
+        
+        zip -r "${APP_NAME_VER}-Windows.zip" "${APP_NAME_VER}-Release"
+        
+        mv "${APP_NAME_VER}-Windows.zip" build/
 
     - name: Package Linux
       if: runner.os == 'Linux'

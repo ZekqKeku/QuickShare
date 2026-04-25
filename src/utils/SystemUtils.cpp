@@ -22,7 +22,6 @@ void SystemUtils::setAutoStart(bool enabled) {
         settings.remove(appName);
     }
 #elif defined(Q_OS_MAC)
-    QString appPath = QCoreApplication::applicationFilePath();
     QString cmd;
     if (enabled) {
         cmd = QString("osascript -e 'tell application \"System Events\" to make login item at end with properties {path:\"%1\", hidden:false, name:\"%2\"}'").arg(appPath, appName);
