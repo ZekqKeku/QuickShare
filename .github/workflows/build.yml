@@ -88,7 +88,7 @@ jobs:
         cp -r "$EXE_DIR"/styles "${APP_NAME_VER}-Release/" 2>/dev/null || true
         cp -r "$EXE_DIR"/tls "${APP_NAME_VER}-Release/" 2>/dev/null || true
         
-        zip -r "${APP_NAME_VER}-Windows.zip" "${APP_NAME_VER}-Release"
+        7z a "${APP_NAME_VER}-Windows.zip" "${APP_NAME_VER}-Release"
         
         mv "${APP_NAME_VER}-Windows.zip" build/
 
