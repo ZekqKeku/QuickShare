@@ -2,7 +2,7 @@ name: Build and Release QuickShare
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "dev" ]
   workflow_dispatch:
     inputs:
       force_release:
@@ -66,6 +66,12 @@ jobs:
 
     - name: Build Project
       run: cmake --build ${{ matrix.build_folder }} --config Release -j 4
+
+    - name: Run Tests
+      shell: bash
+      run: |
+        cd ${{ matrix.build_folder }}
+        ctest -C Release --output-on-failure
 
     - name: Package macOS App
       if: runner.os == 'macOS'
