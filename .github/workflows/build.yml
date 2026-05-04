@@ -129,15 +129,15 @@ jobs:
         export PATH=$PATH:.
         
         # Create AppDir by installing the project
-        cmake --install ${{ matrix.build_folder }} --prefix AppDir
+        cmake --install ${{ matrix.build_folder }} --prefix AppDir/usr
         
         # Set up environment for linuxdeploy
         export QMAKE=$(which qmake || echo $QT_ROOT_DIR/bin/qmake)
         
         # Run linuxdeploy to create the AppImage
         ./linuxdeploy-wrapper.sh --appdir AppDir \
-          -d AppDir/share/applications/com.quickshare.app.desktop \
-          -i AppDir/share/icons/hicolor/512x512/apps/com.quickshare.app.png \
+          -d AppDir/usr/share/applications/com.quickshare.app.desktop \
+          -i AppDir/usr/share/icons/hicolor/512x512/apps/com.quickshare.app.png \
           --plugin qt \
           --output appimage
         
