@@ -12,6 +12,8 @@
 #include "../utils/NameGenerator.h"
 #include "../utils/SystemUtils.h"
 
+using namespace Qt;
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), uploader(new PixeldrainUploader(this)) {
     ui->setupUi(this);
@@ -48,9 +50,9 @@ void MainWindow::applyDockSettings() {
     setMacDockIconVisible(!hide);
 #else
     if (hide) {
-        setWindowFlags(windowFlags() | Qt::Tool);
+        setWindowFlags(windowFlags() | Tool);
     } else {
-        setWindowFlags(windowFlags() & ~Qt::Tool);
+        setWindowFlags(windowFlags() & ~Tool);
     }
     if (isVisible()) show();
 #endif

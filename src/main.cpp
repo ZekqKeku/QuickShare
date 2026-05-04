@@ -16,6 +16,8 @@
 #include <windows.h>
 #endif
 
+using namespace std;
+
 int main(int argc, char *argv[]) {
     bool isCli = argc > 1;
     for (int i = 1; i < argc; ++i) {
@@ -32,7 +34,7 @@ int main(int argc, char *argv[]) {
             FILE* fp;
             freopen_s(&fp, "CONOUT$", "w", stdout);
             freopen_s(&fp, "CONOUT$", "w", stderr);
-            std::ios::sync_with_stdio();
+            ios::sync_with_stdio();
         }
     }
 #endif
@@ -59,12 +61,12 @@ int main(int argc, char *argv[]) {
         parser.showHelp();
         return 0;
     } else {
-        std::cout << "QuickShare " << APP_VERSION << " " << APP_STATUS << std::endl;
-        std::cout << "Uploading: " << files.join(", ").toStdString() << std::endl;
+        cout << "QuickShare " << APP_VERSION << " " << APP_STATUS << endl;
+        cout << "Uploading: " << files.join(", ").toStdString() << endl;
 
         QString fileToUpload;
         if (files.size() > 1 || QFileInfo(files.first()).isDir()) {
-            std::cout << "Creating archive..." << std::endl;
+            cout << "Creating archive..." << endl;
             QString zipName = "QuickShare_" + NameGenerator::generateRandomName() + ".zip";
             QString zipPath = QDir::tempPath() + "/" + zipName;
             fileToUpload = Archiver::createZip(files, zipPath);
@@ -73,14 +75,14 @@ int main(int argc, char *argv[]) {
         }
 
         if (fileToUpload.isEmpty() || !QFileInfo::exists(fileToUpload)) {
-            std::cerr << "Error: File does not exist or archiving failed." << std::endl;
+            cerr << "Error: File does not exist or archiving failed." << endl;
             return 1;
         }
 
         qint64 fileSize = QFileInfo(fileToUpload).size();
         qint64 limit = 10LL * 1024 * 1024 * 1024;
         if (AppConfig::instance().apiKey().isEmpty() && fileSize > limit) {
-            std::cerr << "Error: File is larger than the 10GB limit for free accounts. Please configure an API key." << std::endl;
+            cerr << "Error: File is larger than the 10GB limit for free accounts. Please configure an API key." << endl;
             return 1;
         }
 
@@ -90,22 +92,22 @@ int main(int argc, char *argv[]) {
         QObject::connect(&uploader, &PixeldrainUploader::progressChanged, [](qint64 sent, qint64 total) {
             if (total > 0) {
                 int progress = static_cast<int>((sent * 100) / total);
-                std::cout << "\rProgress: " << progress << "% (" 
+                cout << "\rProgress: " << progress << "% (" 
                           << (sent / 1024 / 1024) << "MB / " 
-                          << (total / 1024 / 1024) << "MB)" << std::flush;
+                          << (total / 1024 / 1024) << "MB)" << flush;
             }
         });
 
         QObject::connect(&uploader, &PixeldrainUploader::uploadFinished, [&](const QString &url) {
-            std::cout << "\nUpload finished successfully!" << std::endl;
-            std::cout << "URL: " << url.toStdString() << std::endl;
+            cout << "\nUpload finished successfully!" << endl;
+            cout << "URL: " << url.toStdString() << endl;
             QGuiApplication::clipboard()->setText(url);
-            std::cout << "Link copied to clipboard." << std::endl;
+            cout << "Link copied to clipboard." << endl;
             loop.quit();
         });
 
         QObject::connect(&uploader, &PixeldrainUploader::uploadError, [&](const QString &error) {
-            std::cerr << "\nUpload error: " << error.toStdString() << std::endl;
+            cerr << "\nUpload error: " << error.toStdString() << endl;
             loop.quit();
         });
 

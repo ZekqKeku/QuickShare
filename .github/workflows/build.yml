@@ -106,12 +106,51 @@ jobs:
         
         mv "${APP_NAME_VER}-Windows.zip" build/
 
-    - name: Package Linux
+    - name: Package Linux (AppImage)
       if: runner.os == 'Linux'
+      env:
+        QT_QPA_PLATFORM: minimal
       run: |
-        cd ${{ matrix.build_folder }}
-        mv QuickShare ${{ steps.manifest.outputs.app_id }}
-        zip -j ${{ steps.manifest.outputs.app_id }}-Linux.zip ${{ steps.manifest.outputs.app_id }}
+        # Install linuxdeploy and the Qt plugin
+        wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+        chmod +x linuxdeploy*.AppImage
+        
+        # Create wrappers to avoid FUSE issues on GitHub Actions
+        echo '#!/bin/bash' > linuxdeploy-wrapper.sh
+        echo 'export APPIMAGE_EXTRACT_AND_RUN=1' >> linuxdeploy-wrapper.sh
+        echo './linuxdeploy-x86_64.AppImage "$@"' >> linuxdeploy-wrapper.sh
+        chmod +x linuxdeploy-wrapper.sh
+        
+        echo '#!/bin/bash' > linuxdeploy-plugin-qt
+        echo 'export APPIMAGE_EXTRACT_AND_RUN=1' >> linuxdeploy-plugin-qt
+        echo './linuxdeploy-plugin-qt-x86_64.AppImage "$@"' >> linuxdeploy-plugin-qt
+        chmod +x linuxdeploy-plugin-qt
+        export PATH=$PATH:.
+        
+        # Create AppDir by installing the project
+        cmake --install ${{ matrix.build_folder }} --prefix AppDir
+        
+        # Set up environment for linuxdeploy
+        export QMAKE=$(which qmake || echo $QT_ROOT_DIR/bin/qmake)
+        
+        # Run linuxdeploy to create the AppImage
+        ./linuxdeploy-wrapper.sh --appdir AppDir \
+          -d AppDir/share/applications/com.quickshare.app.desktop \
+          -i AppDir/share/icons/hicolor/512x512/apps/com.quickshare.app.png \
+          --plugin qt \
+          --output appimage
+        
+        # Move and rename the resulting AppImage
+        APP_NAME_VER="${{ steps.manifest.outputs.app_id }}"
+        mv QuickShare*.AppImage "${APP_NAME_VER}-Linux.AppImage"
+        
+        # Zip it as well
+        zip -j "${APP_NAME_VER}-Linux.zip" "${APP_NAME_VER}-Linux.AppImage"
+        
+        # Move to build folder for upload step
+        mv "${APP_NAME_VER}-Linux.AppImage" "${{ matrix.build_folder }}/"
+        mv "${APP_NAME_VER}-Linux.zip" "${{ matrix.build_folder }}/"
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
@@ -119,6 +158,7 @@ jobs:
         name: artifact-${{ matrix.platform }}
         path: |
           ${{ matrix.build_folder }}/*.zip
+          ${{ matrix.build_folder }}/*.AppImage
 
   release:
     name: Create GitHub Release
@@ -159,7 +199,9 @@ jobs:
       with:
         tag_name: ${{ steps.manifest.outputs.tag }}
         name: QuickShare ${{ steps.manifest.outputs.status }} v${{ steps.manifest.outputs.version }}
-        files: all-artifacts/*.zip
+        files: |
+          all-artifacts/*.zip
+          all-artifacts/*.AppImage
         draft: false
         prerelease: ${{ steps.manifest.outputs.status != 'stable' }}
       env:
