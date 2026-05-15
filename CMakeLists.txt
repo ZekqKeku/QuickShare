@@ -37,6 +37,7 @@ set(QUICKSHARE_SOURCES
     src/utils/Archiver.h src/utils/Archiver.cpp
     src/utils/NameGenerator.h src/utils/NameGenerator.cpp
     src/utils/SystemUtils.h src/utils/SystemUtils.cpp
+    src/utils/Clipboard.h
 )
 
 if(APPLE)
