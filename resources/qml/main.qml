@@ -1,4 +1,3 @@
-// main.qml - Punkt wejsciowy aplikacji
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Window 2.15
@@ -18,24 +17,20 @@ Window {
     
     title: "QuickShare"
     
-    // Glowne okno aplikacji
     MainWindow {
         anchors.fill: parent
         anchors.margins: 8
     }
     
-    // Popup uploadu (tworzony dynamicznie)
     Component {
         id: uploadPopupComponent
         
         UploadPopup {
             onCopyClicked: {
-                // Kopiuj link do schowka
                 clipboard.setText(fileUrl)
             }
             
             onCancelClicked: {
-                // Anuluj upload
                 close()
             }
             
@@ -46,7 +41,6 @@ Window {
         }
     }
     
-    // Funkcja do pokazania popupu uploadu
     function showUploadPopup(fileName, fileSize) {
         var popup = uploadPopupComponent.createObject(null, {
             fileName: fileName,
@@ -58,7 +52,6 @@ Window {
             fileUrl: Qt.binding(function() { return uploadManager.lastUploadUrl })
         })
         
-        // Polacz sygnal zakonczenia uploadu
         var onCompleted = function(finishedFileName, url) {
             if (finishedFileName === fileName) {
                 popup.isCompleted = true

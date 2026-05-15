@@ -30,18 +30,26 @@ QString LanguageManager::currentLanguage() const {
 }
 
 void LanguageManager::loadLanguage(const QString& langCode) {
-    QString path = QCoreApplication::applicationDirPath() + "/lang/" + langCode + ".json";
-    if (!QFile::exists(path)) {
-        path = QDir::currentPath() + "/src/lang/" + langCode + ".json";
-        if (!QFile::exists(path)) {
-            path = QDir::currentPath() + "/QuickShare/src/lang/" + langCode + ".json";
+    QStringList paths;
+    paths << QCoreApplication::applicationDirPath() + "/lang/" + langCode + ".json";
+    paths << QCoreApplication::applicationDirPath() + "/../Resources/lang/" + langCode + ".json";
+    paths << QDir::currentPath() + "/src/lang/" + langCode + ".json";
+    paths << QDir::currentPath() + "/QuickShare/src/lang/" + langCode + ".json";
+
+    QString foundPath;
+    for (const QString& path : paths) {
+        if (QFile::exists(path)) {
+            foundPath = path;
+            break;
         }
     }
 
-    QFile file(path);
-    if (file.open(QIODevice::ReadOnly)) {
-        QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-        currentStrings = doc.object();
-        currentLang = langCode;
+    if (!foundPath.isEmpty()) {
+        QFile file(foundPath);
+        if (file.open(QIODevice::ReadOnly)) {
+            QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+            currentStrings = doc.object();
+            currentLang = langCode;
+        }
     }
 }

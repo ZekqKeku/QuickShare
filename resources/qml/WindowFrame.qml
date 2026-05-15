@@ -1,4 +1,3 @@
-// WindowFrame.qml - Ramka okna w stylu desktop
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
@@ -24,7 +23,6 @@ Rectangle {
     border.color: Theme.border
     radius: Theme.radiusMedium
     
-    // Pasek tytulowy
     Rectangle {
         id: titleBar
         anchors.left: parent.left
@@ -35,7 +33,6 @@ Rectangle {
         color: Theme.card
         radius: Theme.radiusMedium
         
-        // Zaokraglenie tylko na gorze
         Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
@@ -44,7 +41,6 @@ Rectangle {
             color: parent.color
         }
         
-        // Obszar do przeciagania okna
         MouseArea {
             anchors.fill: parent
             anchors.rightMargin: windowButtons.width + 10
@@ -60,14 +56,12 @@ Rectangle {
             }
         }
         
-        // Ikona i tytul
         RowLayout {
             anchors.left: parent.left
             anchors.leftMargin: Theme.spacingMedium
             anchors.verticalCenter: parent.verticalCenter
             spacing: Theme.spacingSmall
             
-            // Ikona aplikacji
             Rectangle {
                 width: 20
                 height: 20
@@ -101,7 +95,6 @@ Rectangle {
             }
         }
         
-        // Przyciski okna
         Row {
             id: windowButtons
             anchors.right: parent.right
@@ -109,7 +102,6 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 2
             
-            // Minimize
             Rectangle {
                 visible: root.showMinimize
                 width: 32
@@ -133,7 +125,6 @@ Rectangle {
                 }
             }
             
-            // Maximize
             Rectangle {
                 visible: root.showMaximize
                 width: 32
@@ -159,7 +150,6 @@ Rectangle {
                 }
             }
             
-            // Close
             Rectangle {
                 visible: root.showClose
                 width: 32
@@ -184,7 +174,6 @@ Rectangle {
         }
     }
     
-    // Obszar zawartosci
     Item {
         id: contentArea
         anchors.left: parent.left
@@ -194,7 +183,6 @@ Rectangle {
         anchors.margins: 1
     }
     
-    // Pasek statusu
     Rectangle {
         id: statusBar
         anchors.left: parent.left
@@ -227,7 +215,6 @@ Rectangle {
             
             Item { Layout.fillWidth: true }
             
-            // Status polaczenia
             Row {
                 spacing: Theme.spacingTiny
                 

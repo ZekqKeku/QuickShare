@@ -2,30 +2,25 @@
 #include <QProcess>
 #include <QFileInfo>
 #include <QDebug>
+#include <QDir>
 
 QString Archiver::createZip(const QStringList &paths, const QString &outputZipPath) {
     if (paths.isEmpty()) return "";
 
     QProcess process;
     QStringList arguments;
-    arguments << "-r" << outputZipPath;
-
-    for (const QString &path : paths) {
-        QFileInfo info(path);
-
-        process.setWorkingDirectory(info.absolutePath());
-        arguments << info.fileName();
-    }
 
 #ifdef Q_OS_WIN
-    QStringList winArguments;
-    winArguments << "-a" << "-c" << "-f" << outputZipPath;
+    arguments << "-a" << "-c" << "-f" << QDir::toNativeSeparators(outputZipPath);
     for (const QString &path : paths) {
-        QFileInfo info(path);
-        winArguments << info.fileName();
+        arguments << QDir::toNativeSeparators(path);
     }
-    process.start("tar", winArguments);
+    process.start("tar", arguments);
 #else
+    arguments << "-j" << outputZipPath; 
+    for (const QString &path : paths) {
+        arguments << path;
+    }
     process.start("zip", arguments);
 #endif
 

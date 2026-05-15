@@ -34,6 +34,7 @@ set(QUICKSHARE_SOURCES
     src/core/SettingsManager.h src/core/SettingsManager.cpp
     src/network/PixeldrainUploader.h src/network/PixeldrainUploader.cpp
     src/network/UploadManager.h src/network/UploadManager.cpp
+    src/cli/CliHandler.h src/cli/CliHandler.cpp
     src/utils/Archiver.h src/utils/Archiver.cpp
     src/utils/NameGenerator.h src/utils/NameGenerator.cpp
     src/utils/SystemUtils.h src/utils/SystemUtils.cpp
@@ -58,6 +59,14 @@ add_custom_command(TARGET QuickShare POST_BUILD
     "${CMAKE_CURRENT_SOURCE_DIR}/src/lang"
     "$<TARGET_FILE_DIR:QuickShare>/lang"
 )
+
+if(APPLE)
+    add_custom_command(TARGET QuickShare POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/lang"
+        "$<TARGET_FILE_DIR:QuickShare>/../Resources/lang"
+    )
+endif()
 
 target_compile_definitions(QuickShare PRIVATE 
     APP_VERSION="${APP_VERSION}"
