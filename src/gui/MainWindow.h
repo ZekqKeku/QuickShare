@@ -30,6 +30,7 @@ private:
     PixeldrainUploader *uploader;
     void startUpload(const QStringList &files);
     void applyDockSettings();
+    void retranslateUi();
 };
 
 #endif

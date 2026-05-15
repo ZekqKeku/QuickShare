@@ -27,6 +27,20 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QComboBox" name="languageComboBox">
+        <item>
+         <property name="text">
+          <string>English</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Polski</string>
+         </property>
+        </item>
+       </widget>
+      </item>
      </layout>
     </item>
     <item>

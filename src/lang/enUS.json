@@ -1,0 +1,16 @@
+{
+    "drop_files_here": "Drop files here",
+    "zipping": "Zipping...",
+    "uploading": "Uploading: ",
+    "done": "Done!",
+    "error": "Error!",
+    "hide_in_dock": "Hide in Dock",
+    "hide_in_taskbar": "Hide in Taskbar",
+    "autostart": "Autostart",
+    "api_key": "API Key",
+    "save": "Save",
+    "link_copied": "Link copied to clipboard",
+    "settings_saved": "Settings saved",
+    "size_limit_warning": "File is larger than the 10GB limit for free accounts. Please configure an API key.",
+    "upload_error": "Upload error"
+}

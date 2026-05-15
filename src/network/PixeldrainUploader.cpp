@@ -7,7 +7,11 @@
 #include "../core/AppConfig.h"
 
 PixeldrainUploader::PixeldrainUploader(QObject *parent)
-    : QObject(parent), manager(new QNetworkAccessManager(this)) {}
+    : QObject(parent), manager(new QNetworkAccessManager(this)), m_apiKey("") {}
+
+void PixeldrainUploader::setApiKey(const QString &key) {
+    m_apiKey = key;
+}
 
 void PixeldrainUploader::uploadFile(const QString &filePath) {
     QFile *file = new QFile(filePath);
@@ -21,14 +25,14 @@ void PixeldrainUploader::uploadFile(const QString &filePath) {
     QUrl url("https://pixeldrain.com/api/file/" + fileInfo.fileName());
     QNetworkRequest request(url);
 
-    QString apiKey = AppConfig::instance().apiKey();
+    QString apiKey = m_apiKey.isEmpty() ? AppConfig::instance().apiKey() : m_apiKey;
     if (!apiKey.isEmpty()) {
         QString auth = "Basic " + QByteArray(":" + apiKey.toUtf8()).toBase64();
         request.setRawHeader("Authorization", auth.toUtf8());
     }
 
     QNetworkReply *reply = manager->put(request, file);
-    file->setParent(reply); 
+    file->setParent(reply);
 
     connect(reply, &QNetworkReply::uploadProgress, this, &PixeldrainUploader::progressChanged);
     connect(reply, &QNetworkReply::finished, this, &PixeldrainUploader::onUploadFinished);

@@ -30,6 +30,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Test)
 
 set(QUICKSHARE_SOURCES
     src/core/AppConfig.h src/core/AppConfig.cpp
+    src/core/LanguageManager.h src/core/LanguageManager.cpp
     src/network/PixeldrainUploader.h src/network/PixeldrainUploader.cpp
     src/utils/Archiver.h src/utils/Archiver.cpp
     src/utils/NameGenerator.h src/utils/NameGenerator.cpp
@@ -44,6 +45,13 @@ add_executable(QuickShare WIN32 MACOSX_BUNDLE
     src/main.cpp
     ${QUICKSHARE_SOURCES}
     src/gui/MainWindow.h src/gui/MainWindow.cpp src/gui/MainWindow.ui
+)
+
+# Copy lang files to build directory
+add_custom_command(TARGET QuickShare POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/lang"
+    "$<TARGET_FILE_DIR:QuickShare>/lang"
 )
 
 target_compile_definitions(QuickShare PRIVATE 

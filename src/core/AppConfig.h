@@ -20,6 +20,9 @@ public:
     void setAutoStart(bool enabled);
     bool isAutoStart() const;
 
+    void setLanguage(const QString& lang);
+    QString language() const;
+
 private:
     AppConfig();
     QSettings settings;

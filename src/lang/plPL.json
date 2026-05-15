@@ -1,0 +1,16 @@
+{
+    "drop_files_here": "Przeciągnij pliki tutaj",
+    "zipping": "Pakowanie...",
+    "uploading": "Przesyłanie: ",
+    "done": "Gotowe!",
+    "error": "Błąd!",
+    "hide_in_dock": "Ukryj w Docku",
+    "hide_in_taskbar": "Ukryj w pasku zadań",
+    "autostart": "Autostart",
+    "api_key": "Klucz API",
+    "save": "Zapisz",
+    "link_copied": "Link skopiowany do schowka",
+    "settings_saved": "Ustawienia zapisane",
+    "size_limit_warning": "Plik jest większy niż limit 10GB dla darmowych kont. Skonfiguruj klucz API.",
+    "upload_error": "Błąd przesyłania"
+}

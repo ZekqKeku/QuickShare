@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QGuiApplication>
 #include "../core/AppConfig.h"
+#include "../core/LanguageManager.h"
 #include "../utils/Archiver.h"
 #include "../utils/NameGenerator.h"
 #include "../utils/SystemUtils.h"
@@ -23,11 +24,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->hideDockCheckBox->setChecked(AppConfig::instance().isHideInDock());
     ui->autostartCheckBox->setChecked(AppConfig::instance().isAutoStart());
 
-#ifdef Q_OS_MAC
-    ui->hideDockCheckBox->setText("Hide in Dock");
-#else
-    ui->hideDockCheckBox->setText("Hide in Taskbar");
-#endif
+    if (AppConfig::instance().language() == "plPL") {
+        ui->languageComboBox->setCurrentIndex(1);
+    } else {
+        ui->languageComboBox->setCurrentIndex(0);
+    }
+
+    retranslateUi();
 
     ui->progressBar->hide();
 
@@ -38,6 +41,20 @@ MainWindow::MainWindow(QWidget *parent)
 
     applyDockSettings();
     SystemUtils::registerContextMenu(true);
+}
+
+void MainWindow::retranslateUi() {
+    auto& lm = LanguageManager::instance();
+    ui->label->setText(lm.getString("drop_files_here"));
+    ui->apiKeyEdit->setPlaceholderText(lm.getString("api_key"));
+    ui->autostartCheckBox->setText(lm.getString("autostart"));
+    ui->saveBtn->setText(lm.getString("save"));
+    
+#ifdef Q_OS_MAC
+    ui->hideDockCheckBox->setText(lm.getString("hide_in_dock"));
+#else
+    ui->hideDockCheckBox->setText(lm.getString("hide_in_taskbar"));
+#endif
 }
 
 MainWindow::~MainWindow() {
@@ -77,66 +94,74 @@ void MainWindow::dropEvent(QDropEvent *event) {
 }
 
 void MainWindow::startUpload(const QStringList &files) {
+    auto& lm = LanguageManager::instance();
     QString fileToUpload;
 
     if (files.size() > 1 || QFileInfo(files.first()).isDir()) {
-        ui->label->setText("Zipping...");
+        ui->label->setText(lm.getString("zipping"));
         QString zipName = "QuickShare_" + NameGenerator::generateRandomName() + ".zip";
         QString zipPath = QDir::tempPath() + "/" + zipName;
         fileToUpload = Archiver::createZip(files, zipPath);
         if (fileToUpload.isEmpty()) {
-            QMessageBox::critical(this, "Error", "Failed to create ZIP archive.");
-            ui->label->setText("Drop files here");
+            QMessageBox::critical(this, lm.getString("error"), "Failed to create ZIP archive.");
+            ui->label->setText(lm.getString("drop_files_here"));
             return;
         }
     } else {
         fileToUpload = files.first();
     }
 
-    ui->label->setText("Uploading: " + QFileInfo(fileToUpload).fileName());
+    ui->label->setText(lm.getString("uploading") + QFileInfo(fileToUpload).fileName());
     
     qint64 fileSize = QFileInfo(fileToUpload).size();
     qint64 limit = 10LL * 1024 * 1024 * 1024;
     if (AppConfig::instance().apiKey().isEmpty() && fileSize > limit) {
-        QMessageBox::warning(this, "Size Limit Exceeded", "File is larger than the 10GB limit for free accounts. Please configure an API key.");
-        ui->label->setText("Drop files here");
+        QMessageBox::warning(this, "Limit", lm.getString("size_limit_warning"));
+        ui->label->setText(lm.getString("drop_files_here"));
         return;
     }
 
     ui->progressBar->setValue(0);
     ui->progressBar->show();
     uploader->uploadFile(fileToUpload);
-    }
+}
 
-    void MainWindow::onUploadProgress(qint64 sent, qint64 total) {
+void MainWindow::onUploadProgress(qint64 sent, qint64 total) {
     if (total > 0) {
         ui->progressBar->setValue(static_cast<int>((sent * 100) / total));
     }
-    }
+}
 
-    void MainWindow::onUploadFinished(const QString &url) {
+void MainWindow::onUploadFinished(const QString &url) {
+    auto& lm = LanguageManager::instance();
     ui->progressBar->hide();
-    ui->label->setText("Done!");
+    ui->label->setText(lm.getString("done"));
     ui->urlResultEdit->setText(url);
 
     QGuiApplication::clipboard()->setText(url);
-    ui->statusbar->showMessage("Link copied to clipboard", 3000);
-    }
+    ui->statusbar->showMessage(lm.getString("link_copied"), 3000);
+}
 
-    void MainWindow::onUploadError(const QString &error) {
+void MainWindow::onUploadError(const QString &error) {
+    auto& lm = LanguageManager::instance();
     ui->progressBar->hide();
-    ui->label->setText("Error!");
-    QMessageBox::warning(this, "Upload Error", error);
-    }
+    ui->label->setText(lm.getString("error"));
+    QMessageBox::warning(this, lm.getString("upload_error"), error);
+}
 
-    void MainWindow::onSaveSettings() {
-        AppConfig::instance().setApiKey(ui->apiKeyEdit->text());
-        AppConfig::instance().setHideInDock(ui->hideDockCheckBox->isChecked());
-        AppConfig::instance().setAutoStart(ui->autostartCheckBox->isChecked());
+void MainWindow::onSaveSettings() {
+    auto& lm = LanguageManager::instance();
+    QString selectedLang = (ui->languageComboBox->currentIndex() == 1) ? "plPL" : "enUS";
+    lm.setLanguage(selectedLang);
+    retranslateUi();
 
-        applyDockSettings();
-        SystemUtils::setAutoStart(ui->autostartCheckBox->isChecked());
-        SystemUtils::registerContextMenu(true);
+    AppConfig::instance().setApiKey(ui->apiKeyEdit->text());
+    AppConfig::instance().setHideInDock(ui->hideDockCheckBox->isChecked());
+    AppConfig::instance().setAutoStart(ui->autostartCheckBox->isChecked());
 
-        ui->statusbar->showMessage("Settings saved", 2000);
-    }
+    applyDockSettings();
+    SystemUtils::setAutoStart(ui->autostartCheckBox->isChecked());
+    SystemUtils::registerContextMenu(true);
+
+    ui->statusbar->showMessage(lm.getString("settings_saved"), 2000);
+}
