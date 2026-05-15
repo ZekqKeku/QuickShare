@@ -12,5 +12,10 @@
     "link_copied": "Link skopiowany do schowka",
     "settings_saved": "Ustawienia zapisane",
     "size_limit_warning": "Plik jest większy niż limit 10GB dla darmowych kont. Skonfiguruj klucz API.",
-    "upload_error": "Błąd przesyłania"
+    "upload_error": "Błąd przesyłania",
+    "upload_tab": "Prześlij",
+    "settings_tab": "Ustawienia",
+    "api_key_label": "Klucz API:",
+    "language_label": "Język:",
+    "url_placeholder": "Link do pliku pojawi się tutaj"
 }

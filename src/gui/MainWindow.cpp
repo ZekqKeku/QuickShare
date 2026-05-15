@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
     retranslateUi();
 
     ui->progressBar->hide();
+    ui->statusbar->showMessage(QString("QuickShare v%1 | Connected to Pixeldrain").arg(APP_VERSION));
 
     connect(ui->saveBtn, &QPushButton::clicked, this, &MainWindow::onSaveSettings);
     connect(uploader, &PixeldrainUploader::progressChanged, this, &MainWindow::onUploadProgress);
@@ -49,6 +50,12 @@ void MainWindow::retranslateUi() {
     ui->apiKeyEdit->setPlaceholderText(lm.getString("api_key"));
     ui->autostartCheckBox->setText(lm.getString("autostart"));
     ui->saveBtn->setText(lm.getString("save"));
+    ui->urlResultEdit->setPlaceholderText(lm.getString("url_placeholder"));
+    
+    ui->tabWidget->setTabText(0, lm.getString("upload_tab"));
+    ui->tabWidget->setTabText(1, lm.getString("settings_tab"));
+    ui->label_apiKey->setText(lm.getString("api_key_label"));
+    ui->label_lang->setText(lm.getString("language_label"));
     
 #ifdef Q_OS_MAC
     ui->hideDockCheckBox->setText(lm.getString("hide_in_dock"));

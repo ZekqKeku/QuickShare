@@ -12,5 +12,10 @@
     "link_copied": "Link copied to clipboard",
     "settings_saved": "Settings saved",
     "size_limit_warning": "File is larger than the 10GB limit for free accounts. Please configure an API key.",
-    "upload_error": "Upload error"
+    "upload_error": "Upload error",
+    "upload_tab": "Upload",
+    "settings_tab": "Settings",
+    "api_key_label": "API Key:",
+    "language_label": "Language:",
+    "url_placeholder": "File link will appear here"
 }

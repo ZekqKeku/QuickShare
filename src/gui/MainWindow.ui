@@ -6,105 +6,381 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>350</height>
+    <width>500</width>
+    <height>550</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>QuickShare</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">
+QMainWindow {
+    background-color: #111218;
+}
+
+QWidget#centralwidget {
+    background-color: #111218;
+}
+
+QTabWidget::pane {
+    border-top: 1px solid #2d2e3a;
+    background: #111218;
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: #94a3b8;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QTabBar::tab:selected {
+    color: #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+}
+
+QTabBar::tab:hover:!selected {
+    color: #f8fafc;
+}
+
+QLabel#label {
+    border: 2px dashed #2d2e3a;
+    border-radius: 8px;
+    background-color: #1a1b23;
+    color: #94a3b8;
+    padding: 40px;
+}
+
+QLabel#label:hover {
+    border-color: #3b82f6;
+    background-color: #1e293b;
+}
+
+QPushButton#saveBtn {
+    background-color: #3b82f6;
+    color: white;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 600;
+}
+
+QPushButton#saveBtn:hover {
+    background-color: #2563eb;
+}
+
+QPushButton#saveBtn:disabled {
+    background-color: #1e293b;
+    color: #64748b;
+}
+
+QLineEdit {
+    background-color: #1a1b23;
+    border: 1px solid #2d2e3a;
+    border-radius: 6px;
+    padding: 8px;
+    color: #f8fafc;
+}
+
+QLineEdit:focus {
+    border-color: #3b82f6;
+}
+
+QComboBox {
+    background-color: #1a1b23;
+    border: 1px solid #2d2e3a;
+    border-radius: 6px;
+    padding: 5px;
+    color: #f8fafc;
+}
+
+QProgressBar {
+    border: 1px solid #2d2e3a;
+    border-radius: 4px;
+    background-color: #1a1b23;
+    text-align: center;
+    color: white;
+}
+
+QProgressBar::chunk {
+    background-color: #3b82f6;
+    border-radius: 3px;
+}
+
+QCheckBox {
+    color: #f8fafc;
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #2d2e3a;
+    border-radius: 4px;
+    background-color: #1a1b23;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+QStatusBar {
+    background-color: #1a1b23;
+    color: #94a3b8;
+    border-top: 1px solid #2d2e3a;
+}
+
+QFrame#settingsFrame {
+    background-color: #1a1b23;
+    border-radius: 8px;
+    border: 1px solid #2d2e3a;
+}
+   </string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
     <item>
-     <layout class="QHBoxLayout" name="settingsLayout">
-      <item>
-       <widget class="QLineEdit" name="apiKeyEdit">
-        <property name="echoMode">
-         <enum>QLineEdit::Password</enum>
-        </property>
-        <property name="placeholderText">
-         <string>Pixeldrain API Key</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="languageComboBox">
-        <item>
-         <property name="text">
-          <string>English</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Polski</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="styleSheet">
+       <string notr="true">QTabWidget::pane { border: 0; }</string>
       </property>
-      <property name="text">
-       <string>Drop files here</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QProgressBar" name="progressBar">
-      <property name="value">
+      <property name="currentIndex">
        <number>0</number>
       </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="urlResultEdit">
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
-      <property name="placeholderText">
-       <string>File link will appear here</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="checkboxLayout">
-      <item>
-       <widget class="QCheckBox" name="hideDockCheckBox">
-        <property name="text">
-         <string>Hide in Dock/Taskbar</string>
+      <widget class="QWidget" name="uploadTab">
+       <attribute name="title">
+        <string>Upload</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="spacing">
+         <number>15</number>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="autostartCheckBox">
-        <property name="text">
-         <string>Autostart</string>
+        <property name="leftMargin">
+         <number>20</number>
         </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <widget class="QPushButton" name="saveBtn">
-      <property name="text">
-       <string>Apply Settings</string>
-      </property>
+        <property name="topMargin">
+         <number>20</number>
+        </property>
+        <property name="rightMargin">
+         <number>20</number>
+        </property>
+        <property name="bottomMargin">
+         <number>20</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>14</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Drag and drop files here</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QProgressBar" name="progressBar">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>8</height>
+           </size>
+          </property>
+          <property name="value">
+           <number>0</number>
+          </property>
+          <property name="textVisible">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="urlResultEdit">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>File link will appear here</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="settingsTab">
+       <attribute name="title">
+        <string>Settings</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="spacing">
+         <number>20</number>
+        </property>
+        <property name="leftMargin">
+         <number>20</number>
+        </property>
+        <property name="topMargin">
+         <number>20</number>
+        </property>
+        <property name="rightMargin">
+         <number>20</number>
+        </property>
+        <property name="bottomMargin">
+         <number>20</number>
+        </property>
+        <item>
+         <widget class="QFrame" name="settingsFrame">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <property name="leftMargin">
+            <number>15</number>
+           </property>
+           <property name="topMargin">
+            <number>15</number>
+           </property>
+           <property name="rightMargin">
+            <number>15</number>
+           </property>
+           <property name="bottomMargin">
+            <number>15</number>
+           </property>
+           <item>
+            <layout class="QFormLayout" name="formLayout">
+             <property name="horizontalSpacing">
+              <number>15</number>
+             </property>
+             <property name="verticalSpacing">
+              <number>15</number>
+             </property>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_apiKey">
+               <property name="styleSheet">
+                <string notr="true">color: #94a3b8;</string>
+               </property>
+               <property name="text">
+                <string>API Key:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="apiKeyEdit">
+               <property name="echoMode">
+                <enum>QLineEdit::Password</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_lang">
+               <property name="styleSheet">
+                <string notr="true">color: #94a3b8;</string>
+               </property>
+               <property name="text">
+                <string>Language:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QComboBox" name="languageComboBox">
+               <item>
+                <property name="text">
+                 <string>English</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Polski</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="autostartCheckBox">
+             <property name="text">
+              <string>Autostart with system</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="hideDockCheckBox">
+             <property name="text">
+              <string>Minimize to tray</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="saveBtn">
+          <property name="cursor">
+           <cursor shape="PointingHandCursor"/>
+          </property>
+          <property name="text">
+           <string>Save Settings</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar"/>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="styleSheet">
+    <string notr="true">padding: 5px;</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>
