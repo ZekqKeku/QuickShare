@@ -102,7 +102,9 @@ int CliHandler::handleUpload(const QStringList &posArgs, bool compress, bool sol
     QString apiKey = !apiFlag.isEmpty() ? apiFlag : settingsManager.apiKey();
     
     if (apiKey.isEmpty()) {
-        cerr << "Error: Pixeldrain API key is not set. Use 'qs config api <key>'" << endl;
+        cerr << "Error: Pixeldrain API key is not set. To upload files, you need an API key." << endl;
+        cerr << "Get your API key at: https://pixeldrain.com/user/api_keys" << endl;
+        cerr << "Then set it using: qs config api <key>" << endl;
         return 1;
     }
 
@@ -189,6 +191,20 @@ int CliHandler::handleUpload(const QStringList &posArgs, bool compress, bool sol
     } else {
         connectLog(QFileInfo(pathsToUpload.first()).fileName());
         QObject::connect(&uploader, &PixeldrainUploader::uploadFinished, [&](const QString &url) {
+            cout << "\nLink: " << url.toStdString() << endl;
+            loop.quit();
+        });
+        QObject::connect(&uploader, &PixeldrainUploader::uploadError, [&](const QString &err) {
+            cerr << "\nUpload error: " << err.toStdString() << endl;
+            loop.quit();
+        });
+        uploader.uploadFile(pathsToUpload.first());
+        loop.exec();
+    }
+
+    return 0;
+}
+shed, [&](const QString &url) {
             cout << "\nLink: " << url.toStdString() << endl;
             loop.quit();
         });

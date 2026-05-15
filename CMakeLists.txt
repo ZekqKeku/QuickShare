@@ -114,6 +114,7 @@ enable_testing()
 add_executable(QuickShareTests
     tests/test_utils.cpp
     tests/test_network.cpp
+    tests/test_cli.cpp
     ${QUICKSHARE_SOURCES}
 )
 
