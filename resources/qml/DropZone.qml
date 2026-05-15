@@ -1,8 +1,9 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 import QtQuick.Dialogs
-import QuickShare 1.0
+import QtCore
+import QuickShare
 
 Item {
     id: root

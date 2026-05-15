@@ -26,6 +26,9 @@ int main(int argc, char *argv[])
 
     filteredArgs.append(rawArgs.at(0));
 
+    QStringList cliCommands = { "config", "upload" };
+    QStringList cliFlags = { "-f", "--file", "-c", "--compress", "-s", "--solo", "-a", "--api", "-h", "--help", "-v", "--version" };
+
     for (int i = 1; i < rawArgs.size(); ++i) {
         QString arg = rawArgs.at(i);
         bool isJunk = false;
@@ -38,9 +41,14 @@ int main(int argc, char *argv[])
             }
         }
         if (isJunk) continue;
+        
         filteredArgs.append(arg);
-        if (arg.startsWith("-") || arg == "config") hasCliFlags = true;
-        else filesToUpload.append(arg);
+        
+        if (cliCommands.contains(arg) || cliFlags.contains(arg)) {
+            hasCliFlags = true;
+        } else if (!arg.startsWith("-")) {
+            filesToUpload.append(arg);
+        }
     }
 
     if (hasCliFlags) {

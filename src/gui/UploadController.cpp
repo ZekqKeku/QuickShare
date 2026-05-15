@@ -1,6 +1,4 @@
 #include "UploadController.h"
-#include "../utils/Archiver.h"
-#include "../utils/NameGenerator.h"
 #include <QHttpMultiPart>
 #include <QFileInfo>
 #include <QJsonDocument>
