@@ -1,5 +1,5 @@
-#ifndef UPLOADMANAGER_H
-#define UPLOADMANAGER_H
+#ifndef UPLOADCONTROLLER_H
+#define UPLOADCONTROLLER_H
 
 #include <QObject>
 #include <QNetworkAccessManager>
@@ -9,7 +9,7 @@
 #include <QElapsedTimer>
 #include <QStringList>
 
-class UploadManager : public QObject
+class UploadController : public QObject
 {
     Q_OBJECT
     
@@ -20,8 +20,8 @@ class UploadManager : public QObject
     Q_PROPERTY(QString lastUploadUrl READ lastUploadUrl NOTIFY lastUploadUrlChanged)
     
 public:
-    explicit UploadManager(QObject *parent = nullptr);
-    ~UploadManager();
+    explicit UploadController(QObject *parent = nullptr);
+    ~UploadController();
     
     bool isUploading() const { return m_isUploading; }
     qreal progress() const { return m_progress; }
@@ -74,4 +74,4 @@ private:
     QStringList m_uploadQueue;
 };
 
-#endif // UPLOADMANAGER_H
+#endif

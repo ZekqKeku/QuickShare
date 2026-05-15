@@ -50,4 +50,4 @@ private:
     bool m_minimizeToTray;
 };
 
-#endif // SETTINGSMANAGER_H
+#endif

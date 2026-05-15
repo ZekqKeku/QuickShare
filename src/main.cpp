@@ -3,9 +3,10 @@
 #include <QQmlContext>
 #include <QFileInfo>
 #include <QStringList>
+#include <QDebug>
 #include "cli/CliHandler.h"
 #include "core/SettingsManager.h"
-#include "network/UploadManager.h"
+#include "gui/UploadController.h"
 #include "utils/Clipboard.h"
 
 int main(int argc, char *argv[])
@@ -28,31 +29,18 @@ int main(int argc, char *argv[])
     for (int i = 1; i < rawArgs.size(); ++i) {
         QString arg = rawArgs.at(i);
         bool isJunk = false;
-
         for (const QString& prefix : junkPrefixes) {
-            if (arg.startsWith(prefix)) {
-                isJunk = true;
-                break;
-            }
+            if (arg.startsWith(prefix)) { isJunk = true; break; }
         }
         if (!isJunk) {
             for (const QString& exact : junkExact) {
-                if (arg == exact) {
-                    isJunk = true;
-                    break;
-                }
+                if (arg == exact) { isJunk = true; break; }
             }
         }
-
         if (isJunk) continue;
-
         filteredArgs.append(arg);
-
-        if (arg.startsWith("-") || arg == "config") {
-            hasCliFlags = true;
-        } else {
-            filesToUpload.append(arg);
-        }
+        if (arg.startsWith("-") || arg == "config") hasCliFlags = true;
+        else filesToUpload.append(arg);
     }
 
     if (hasCliFlags) {
@@ -60,32 +48,35 @@ int main(int argc, char *argv[])
         return cli.execute(filteredArgs);
     }
 
+    qmlRegisterSingletonType(QUrl("qrc:/qml/Theme.qml"), "QuickShare", 1, 0, "Theme");
+
     SettingsManager settingsManager;
-    UploadManager uploadManager;
+    UploadController uploadController;
     Clipboard clipboard;
 
     QQmlApplicationEngine engine;
-    qmlRegisterSingletonType(QUrl("qrc:/qml/Theme.qml"), "QuickShare", 1, 0, "Theme");
     
     engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
-    engine.rootContext()->setContextProperty("uploadManager", &uploadManager);
+    engine.rootContext()->setContextProperty("uploadManager", &uploadController);
     engine.rootContext()->setContextProperty("clipboard", &clipboard);
 
     const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated, &app, 
-        [url, filesToUpload, &settingsManager, &uploadManager](QObject *obj, const QUrl &objUrl) {
+        [url, filesToUpload, &settingsManager, &uploadController](QObject *obj, const QUrl &objUrl) {
             if (!obj && url == objUrl) {
                 QCoreApplication::exit(-1);
             } else if (obj && url == objUrl && !filesToUpload.isEmpty()) {
                 QString fileName = filesToUpload.size() > 1 ? "Wiele plików..." : QFileInfo(filesToUpload.first()).fileName();
                 QMetaObject::invokeMethod(obj, "showUploadPopup", Q_ARG(QVariant, fileName), Q_ARG(QVariant, "Obliczanie..."));
-                uploadManager.setApiKey(settingsManager.apiKey());
-                uploadManager.uploadFiles(filesToUpload);
+                uploadController.setApiKey(settingsManager.apiKey());
+                uploadController.uploadFiles(filesToUpload);
             }
         }, Qt::QueuedConnection);
 
     engine.load(url);
-    if (engine.rootObjects().isEmpty()) return -1;
+    if (engine.rootObjects().isEmpty()) {
+        return -1;
+    }
 
     return app.exec();
 }

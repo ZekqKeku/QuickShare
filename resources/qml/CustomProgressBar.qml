@@ -1,4 +1,3 @@
-// CustomProgressBar.qml - Uniwersalny pasek postepu
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QuickShare 1.0
@@ -6,7 +5,7 @@ import QuickShare 1.0
 Item {
     id: root
     
-    property real value: 0.0  // 0.0 - 1.0
+    property real value: 0.0
     property string speedText: ""
     property bool showPercentage: true
     property bool showSpeed: true
@@ -15,7 +14,6 @@ Item {
     
     height: barHeight + (showPercentage || showSpeed ? 24 : 0)
     
-    // Tekst z procentem i predkoscia
     Row {
         id: statsRow
         anchors.left: parent.left
@@ -44,7 +42,6 @@ Item {
         }
     }
     
-    // Tlo paska
     Rectangle {
         id: progressBackground
         anchors.left: parent.left
@@ -57,7 +54,6 @@ Item {
         border.color: Theme.border
         clip: true
         
-        // Wypelnienie paska
         Rectangle {
             id: progressFill
             anchors.left: parent.left
@@ -80,7 +76,6 @@ Item {
                 }
             }
             
-            // Efekt shine
             Rectangle {
                 id: shineEffect
                 width: 60
@@ -108,7 +103,6 @@ Item {
                 }
             }
             
-            // Animacja indeterminate
             SequentialAnimation on x {
                 running: root.indeterminate
                 loops: Animation.Infinite

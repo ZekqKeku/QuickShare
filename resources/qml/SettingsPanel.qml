@@ -74,61 +74,12 @@ Item {
                 Text {
                     Layout.alignment: Qt.AlignHCenter
                     Layout.fillWidth: true
-                    text: "Czy na pewno chcesz usunac wszystkie dane aplikacji?\n\nTa operacja usunie:"
+                    text: "Czy na pewno chcesz usunac wszystkie dane aplikacji?"
                     color: Theme.mutedForeground
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeNormal
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WordWrap
-                }
-                
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: deleteListCol.implicitHeight + Theme.spacingNormal * 2
-                    radius: Theme.radiusNormal
-                    color: Theme.secondary
-                    
-                    ColumnLayout {
-                        id: deleteListCol
-                        anchors.fill: parent
-                        anchors.margins: Theme.spacingNormal
-                        spacing: Theme.spacingSmall
-                        
-                        Repeater {
-                            model: [
-                                "Opcje menu kontekstowego (PPM)",
-                                "Wpisy autostartu w systemie",
-                                "Zapisany klucz API",
-                                "Wszystkie ustawienia aplikacji"
-                            ]
-                            
-                            RowLayout {
-                                spacing: Theme.spacingSmall
-                                
-                                Text {
-                                    text: "\u2022"
-                                    color: Theme.destructive
-                                    font.pixelSize: Theme.fontSizeNormal
-                                }
-                                
-                                Text {
-                                    text: modelData
-                                    color: Theme.foreground
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSizeSmall
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-                    text: "Tej operacji nie mozna cofnac!"
-                    color: Theme.destructive
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.fontSizeSmall
-                    font.weight: Font.Medium
                 }
                 
                 RowLayout {
@@ -315,125 +266,6 @@ Item {
             
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: langSection.implicitHeight + Theme.spacingMedium * 2
-                radius: Theme.radiusNormal
-                color: Theme.card
-                border.width: 1
-                border.color: Theme.border
-                
-                ColumnLayout {
-                    id: langSection
-                    anchors.fill: parent
-                    anchors.margins: Theme.spacingMedium
-                    spacing: Theme.spacingNormal
-                    
-                    RowLayout {
-                        spacing: Theme.spacingSmall
-                        
-                        Text {
-                            text: "\uD83C\uDF10"
-                            font.pixelSize: 18
-                            color: Theme.primary
-                        }
-                        
-                        Text {
-                            text: "Jezyk aplikacji"
-                            color: Theme.foreground
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.fontSizeMedium
-                            font.weight: Font.Medium
-                        }
-                    }
-                    
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 44
-                        radius: Theme.radiusNormal
-                        color: Theme.secondary
-                        border.width: 1
-                        border.color: langCombo.popup.visible ? Theme.primary : Theme.border
-                        
-                        ComboBox {
-                            id: langCombo
-                            anchors.fill: parent
-                            anchors.margins: 1
-                            model: [
-                                { value: "pl", text: "Polski" },
-                                { value: "en", text: "English" }
-                            ]
-                            textRole: "text"
-                            valueRole: "value"
-                            currentIndex: model.findIndex(item => item.value === root.language)
-                            
-                            onCurrentValueChanged: root.language = currentValue
-                            
-                            background: Rectangle { color: "transparent" }
-                            
-                            contentItem: Text {
-                                leftPadding: Theme.spacingNormal
-                                text: langCombo.displayText
-                                color: Theme.foreground
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSizeNormal
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                            
-                            indicator: Text {
-                                x: langCombo.width - width - Theme.spacingNormal
-                                y: (langCombo.height - height) / 2
-                                text: "\u25BC"
-                                color: Theme.mutedForeground
-                                font.pixelSize: 10
-                            }
-                            
-                            popup: Popup {
-                                y: langCombo.height + 4
-                                width: langCombo.width
-                                implicitHeight: contentItem.implicitHeight + 8
-                                padding: 4
-                                background: Rectangle {
-                                    color: Theme.card
-                                    border.width: 1
-                                    border.color: Theme.border
-                                    radius: Theme.radiusNormal
-                                }
-                                contentItem: ListView {
-                                    clip: true
-                                    implicitHeight: contentHeight
-                                    model: langCombo.popup.visible ? langCombo.model : null
-                                    delegate: Rectangle {
-                                        width: parent.width
-                                        height: 36
-                                        radius: Theme.radiusSmall
-                                        color: mouseArea.containsMouse ? Theme.secondary : "transparent"
-                                        Text {
-                                            anchors.left: parent.left
-                                            anchors.leftMargin: Theme.spacingNormal
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            text: modelData.text
-                                            color: Theme.foreground
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: Theme.fontSizeNormal
-                                        }
-                                        MouseArea {
-                                            id: mouseArea
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            onClicked: {
-                                                langCombo.currentIndex = index
-                                                langCombo.popup.close()
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            Rectangle {
-                Layout.fillWidth: true
                 implicitHeight: behaviorSection.implicitHeight + Theme.spacingMedium * 2
                 radius: Theme.radiusNormal
                 color: Theme.card
@@ -503,52 +335,6 @@ Item {
                                 Behavior on x { NumberAnimation { duration: 150 } }
                             }
                             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.minimizeToTray = !root.minimizeToTray }
-                        }
-                    }
-                }
-            }
-            
-            Rectangle {
-                Layout.fillWidth: true
-                implicitHeight: deleteSection.implicitHeight + Theme.spacingMedium * 2
-                radius: Theme.radiusNormal
-                color: Theme.card
-                border.width: 1
-                border.color: Theme.destructive
-                
-                ColumnLayout {
-                    id: deleteSection
-                    anchors.fill: parent
-                    anchors.margins: Theme.spacingMedium
-                    spacing: Theme.spacingNormal
-                    
-                    RowLayout {
-                        spacing: Theme.spacingSmall
-                        Text { text: "\uD83D\uDDD1"; font.pixelSize: 18; color: Theme.destructive }
-                        Text { text: "Strefa zagrozenia"; color: Theme.destructive; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Medium }
-                    }
-                    
-                    Text {
-                        Layout.fillWidth: true
-                        text: "Usun wszystkie dane aplikacji, w tym klucz API i wpisy systemowe."
-                        color: Theme.mutedForeground
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeSmall
-                        wrapMode: Text.WordWrap
-                    }
-                    
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 40
-                        radius: Theme.radiusNormal
-                        color: deleteDataBtn.containsMouse ? Qt.darker(Theme.destructive, 1.1) : Theme.destructive
-                        Text { anchors.centerIn: parent; text: "Usun wszystkie dane"; color: "#ffffff"; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeNormal; font.weight: Font.Medium }
-                        MouseArea {
-                            id: deleteDataBtn
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: confirmDialog.visible = true
                         }
                     }
                 }

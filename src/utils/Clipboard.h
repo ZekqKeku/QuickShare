@@ -16,4 +16,4 @@ public:
     }
 };
 
-#endif // CLIPBOARD_H
+#endif

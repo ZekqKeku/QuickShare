@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Dialogs
 import QuickShare 1.0
 
 Item {
@@ -14,6 +15,15 @@ Item {
     property string uploadedFileUrl: ""
     property string uploadedFileName: ""
     
+    FileDialog {
+        id: fileDialog
+        title: "Wybierz pliki do przeslania"
+        currentFolder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        onAccepted: {
+            root.filesDropped(selectedFiles)
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Theme.spacingLarge

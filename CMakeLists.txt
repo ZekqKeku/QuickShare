@@ -33,7 +33,7 @@ set(QUICKSHARE_SOURCES
     src/core/LanguageManager.h src/core/LanguageManager.cpp
     src/core/SettingsManager.h src/core/SettingsManager.cpp
     src/network/PixeldrainUploader.h src/network/PixeldrainUploader.cpp
-    src/network/UploadManager.h src/network/UploadManager.cpp
+    src/gui/UploadController.h src/gui/UploadController.cpp
     src/cli/CliHandler.h src/cli/CliHandler.cpp
     src/utils/Archiver.h src/utils/Archiver.cpp
     src/utils/NameGenerator.h src/utils/NameGenerator.cpp
@@ -53,7 +53,6 @@ add_executable(QuickShare WIN32 MACOSX_BUNDLE
     ${RESOURCES}
 )
 
-# Copy lang files to build directory
 add_custom_command(TARGET QuickShare POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     "${CMAKE_CURRENT_SOURCE_DIR}/src/lang"
@@ -101,13 +100,11 @@ target_link_libraries(QuickShare PRIVATE
     Qt6::Network
 )
 
-# --- Tests ---
 include(FetchContent)
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.tar.gz
 )
-# For Windows: prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)

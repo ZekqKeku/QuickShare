@@ -1,4 +1,4 @@
-#include "UploadManager.h"
+#include "UploadController.h"
 #include "../utils/Archiver.h"
 #include "../utils/NameGenerator.h"
 #include <QHttpMultiPart>
@@ -7,7 +7,7 @@
 #include <QJsonObject>
 #include <QDir>
 
-UploadManager::UploadManager(QObject *parent)
+UploadController::UploadController(QObject *parent)
     : QObject(parent)
     , m_networkManager(new QNetworkAccessManager(this))
     , m_currentReply(nullptr)
@@ -19,17 +19,17 @@ UploadManager::UploadManager(QObject *parent)
 {
 }
 
-UploadManager::~UploadManager()
+UploadController::~UploadController()
 {
     cancelUpload();
 }
 
-void UploadManager::setApiKey(const QString &apiKey)
+void UploadController::setApiKey(const QString &apiKey)
 {
     m_apiKey = apiKey;
 }
 
-void UploadManager::uploadFile(const QString &filePath)
+void UploadController::uploadFile(const QString &filePath)
 {
     if (m_isUploading) {
         m_uploadQueue.append(filePath);
@@ -87,14 +87,14 @@ void UploadManager::uploadFile(const QString &filePath)
     multiPart->setParent(m_currentReply);
     
     connect(m_currentReply, &QNetworkReply::uploadProgress,
-            this, &UploadManager::onUploadProgress);
+            this, &UploadController::onUploadProgress);
     connect(m_currentReply, &QNetworkReply::finished,
-            this, &UploadManager::onUploadFinished);
+            this, &UploadController::onUploadFinished);
     connect(m_currentReply, &QNetworkReply::errorOccurred,
-            this, &UploadManager::onUploadError);
+            this, &UploadController::onUploadError);
 }
 
-void UploadManager::uploadFiles(const QStringList &filePaths)
+void UploadController::uploadFiles(const QStringList &filePaths)
 {
     if (filePaths.isEmpty()) return;
     
@@ -114,7 +114,7 @@ void UploadManager::uploadFiles(const QStringList &filePaths)
     uploadFile(fileToUpload);
 }
 
-void UploadManager::cancelUpload()
+void UploadController::cancelUpload()
 {
     if (m_currentReply) {
         m_currentReply->abort();
@@ -139,7 +139,7 @@ void UploadManager::cancelUpload()
     m_uploadQueue.clear();
 }
 
-void UploadManager::onUploadProgress(qint64 bytesSent, qint64 bytesTotal)
+void UploadController::onUploadProgress(qint64 bytesSent, qint64 bytesTotal)
 {
     if (bytesTotal > 0) {
         m_progress = static_cast<qreal>(bytesSent) / static_cast<qreal>(bytesTotal);
@@ -163,7 +163,7 @@ void UploadManager::onUploadProgress(qint64 bytesSent, qint64 bytesTotal)
     }
 }
 
-void UploadManager::onUploadFinished()
+void UploadController::onUploadFinished()
 {
     if (!m_currentReply) return;
     
@@ -197,7 +197,7 @@ void UploadManager::onUploadFinished()
     }
 }
 
-void UploadManager::onUploadError(QNetworkReply::NetworkError error)
+void UploadController::onUploadError(QNetworkReply::NetworkError error)
 {
     if (error == QNetworkReply::OperationCanceledError) return;
     
@@ -207,14 +207,14 @@ void UploadManager::onUploadError(QNetworkReply::NetworkError error)
     }
 }
 
-QString UploadManager::formatSpeed(qint64 bytesPerSecond)
+QString UploadController::formatSpeed(qint64 bytesPerSecond)
 {
     if (bytesPerSecond < 1024) return QString("%1 B/s").arg(bytesPerSecond);
     if (bytesPerSecond < 1024 * 1024) return QString("%1 KB/s").arg(bytesPerSecond / 1024.0, 0, 'f', 1);
     return QString("%1 MB/s").arg(bytesPerSecond / (1024.0 * 1024.0), 0, 'f', 2);
 }
 
-QString UploadManager::formatFileSize(qint64 bytes)
+QString UploadController::formatFileSize(qint64 bytes)
 {
     if (bytes < 1024) return QString("%1 B").arg(bytes);
     if (bytes < 1024 * 1024) return QString("%1 KB").arg(bytes / 1024.0, 0, 'f', 1);
