@@ -7,7 +7,7 @@
 
 Sharing a quick screenshot, a short video, or a zipped project folder with friends shouldn't be a hassle. We've all been there: you try to drop a file into a chat on a certain widely used communication platform, only to be hit with a hard block because your file is slightly over their laughable 8MB free-tier limit. 
 
-**QuickShare** was born out of that exact frustration. It is a lightweight, blazing-fast, cross-platform C++ desktop application that integrates seamlessly with your operating system to let you upload and share files via Pixeldrain in seconds. No more arbitrary blocks, no more forced subscriptions just to share a 9MB video.
+**QuickShare** was born out of that exact frustration. It is a lightweight, blazing-fast, cross-platform C++ desktop application that integrates seamlessly with your operating system to let you upload and share files via Pixeldrain in seconds.
 
 ## How it Works
 
@@ -16,42 +16,89 @@ Whether you prefer a visual interface or working straight from your file manager
 - **Drop & Go:** Open the clean, modern Qt-based UI and drag-and-drop any file or folder directly into the window.
 - **Headless Context Menu Integration:** Right-click any file directly in Windows Explorer, macOS Finder, or your Linux file manager, and hit "Share". QuickShare runs entirely in the background, uploads the file, and instantly copies the Pixeldrain link directly to your clipboard.
 - **Smart Auto-Zipping:** Need to share a whole directory or a batch of files? QuickShare automatically detects multiple files or folders and bundles them into a clean ZIP archive before uploading.
+- **Portable & Zero-Hassle:** QuickShare is a single, lightweight binary. No bloated installers, no hidden background services, and no complex uninstallation. Just download it, run it, and if you ever want to remove it, simply delete the file. It's that simple.
 
 *Note: While Pixeldrain allows anonymous uploads, you can configure your personal API key in the app settings to link uploads to your account and bypass anonymous size limits (e.g., the 10GB restriction).*
 
+## CLI Usage
+
+The CLI mode allows for powerful automation and quick uploads directly from the terminal.
+
+### Commands
+- `qs config <option> <value>`: Modify application settings.
+    - `api <key>`: Sets your Pixeldrain API key.
+    - `hide-in-taskbar <true|false>`: Toggles visibility in the system tray/dock.
+    - `autostart <true|false>`: Enables or disables launch on system startup.
+
+### Flags
+- `-f, --file <path>`: Specify the file or directory to upload.
+- `-c, --compress`: Forces the program to compress the specified path into a ZIP archive before uploading.
+- `-s, --solo`: If a directory is specified, it uploads each file individually instead of zipping them.
+- `-a, --api <key>`: Uses a temporary API key for this specific command execution (overrides saved config).
+- `-h, --help`: Displays the help message with all available options.
+- `-v, --version`: Displays the current version of QuickShare.
+
+### Usage Examples
+
+**1. Basic file upload:**
+```bash
+qs my_photo.png
+```
+
+**2. Upload a directory as a single ZIP archive:**
+```bash
+qs -c ./my_project_folder
+```
+
+**3. Upload every file in a folder separately using a one-time API key:**
+```bash
+qs -s -a YOUR_TEMP_KEY ./vacation_photos
+```
+
+**4. Update your API key permanently:**
+```bash
+qs config api 12345-abcde-67890
+```
+
+### Directory Handling Logic
+When you pass a directory without `-c` or `-s` flags, the program will interactively ask:
+1. **"Compress into ZIP? [Y/n]"**: If you choose Yes (default), a single ZIP is created and uploaded.
+2. **"Upload each file separately? [Y/n]"**: If you choose Yes, every file in the directory (recursive) is uploaded one by one. A report file `qs-upload-data(date).txt` will be created in the current directory containing all links.
+
 ## Installation
 
-Pre-compiled, ready-to-run binaries for **Windows**, **macOS**, and **Linux** are automatically generated and available on the [Releases](../../releases) page.
+You can download pre-compiled binaries for **Windows**, **macOS**, and **Linux** from the [Releases](../../releases) page.
 
 ## Building from Source
 
-If you prefer to compile the application yourself, ensure you have **CMake** (3.19+) and the **Qt 6 Framework** installed on your system.
+### Standard Build (CMake)
+Ensure you have **CMake** (3.19+) and the **Qt 6 Framework** installed.
 
 ```bash
-# Clone the repository
 git clone https://github.com/ZekqKeku/QuickShare.git
 cd QuickShare
-
-# Create a build directory
 mkdir build && cd build
-
-# Configure and build the project
 cmake ..
 cmake --build . -j 4
 ```
 
-## Project Goals & Motivation
+### Building for Flatpak (Linux)
+To build and install QuickShare as a Flatpak, you need `flatpak` and `flatpak-builder` installed on your system.
 
-Beyond solving a daily annoyance, this project serves as a hands-on technical sandbox to experiment with:
-- Developing robust, cross-platform desktop software using modern **C++** and **Qt 6**.
-- Orchestrating automated multi-os build pipelines and artifact generation using **GitHub Actions**.
-- Testing the limits and capabilities of Gemini CLI as an autonomous AI peer-programmer assistent throughout the entire software engineering lifecycle.
+```bash
+# Install the required KDE runtime and SDK
+flatpak install flathub org.kde.Platform//6.6 org.kde.Sdk//6.6
+
+# Build the Flatpak
+flatpak-builder --force-clean build-dir flatpak/com.quickshare.app.yml
+
+# Install the build locally
+flatpak-builder --user --install --force-clean build-dir flatpak/com.quickshare.app.yml
+
+# Run QuickShare
+flatpak run com.quickshare.app
+```
 
 ## License
 
-This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
-
-- **Commercial Use:** Commercial use of this software is strictly restricted to the original author.
-- **Forks and Derivatives:** Any forks or derivative works must credit the original repository and maintain the same license.
-
-For the full legal text, see the [LICENSE](LICENSE) file.
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license. See the [LICENSE](LICENSE) file for details.

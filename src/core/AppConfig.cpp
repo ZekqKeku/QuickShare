@@ -38,3 +38,11 @@ void AppConfig::setAutoStart(bool enabled) {
 bool AppConfig::isAutoStart() const {
     return settings.value("autostart", false).toBool();
 }
+
+void AppConfig::setLanguage(const QString& lang) {
+    settings.setValue("language", lang);
+}
+
+QString AppConfig::language() const {
+    return settings.value("language", "enUS").toString();
+}

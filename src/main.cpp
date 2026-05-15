@@ -1,78 +1,150 @@
 #include <QApplication>
-#include <QCommandLineParser>
-#include <QDebug>
+#include <QQmlApplicationEngine>
+#include <QQmlContext>
+#include <QQuickStyle>
 #include <QFileInfo>
-#include <QDir>
-#include <QClipboard>
-#include <QEventLoop>
-#include "gui/MainWindow.h"
-#include "network/PixeldrainUploader.h"
-#include "utils/Archiver.h"
-#include "utils/NameGenerator.h"
-#include "core/AppConfig.h"
+#include <QStringList>
+#include <QDebug>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QScreen>
+#include "cli/CliHandler.h"
+#include "core/SettingsManager.h"
+#include "gui/UploadController.h"
+#include "utils/Clipboard.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     QApplication app(argc, argv);
+
+    QQuickStyle::setStyle("Basic");
+    
     app.setApplicationName(APP_NAME);
-    app.setApplicationVersion(QString("%1-%2").arg(APP_VERSION, APP_STATUS));
+    app.setApplicationVersion(APP_VERSION);
+    app.setOrganizationName("QuickShare");
 
-    QCommandLineParser parser;
-    parser.setApplicationDescription(APP_DESCRIPTION);
-    parser.addHelpOption();
-    parser.addVersionOption();
-    parser.addPositionalArgument("files", "Files to upload", "[files...]");
+    QStringList rawArgs = app.arguments();
+    QStringList filteredArgs;
+    QStringList filesToUpload;
+    bool hasCliFlags = false;
+    bool startInBackground = false;
 
-    parser.process(app);
+    QStringList junkPrefixes = { "-psn", "--sm-client-id" };
+    QStringList junkExact = { "-reopen" };
 
-    const QStringList files = parser.positionalArguments();
+    filteredArgs.append(rawArgs.at(0));
 
-    if (files.isEmpty()) {
-        MainWindow w;
-        w.show();
-        return app.exec();
-    } else {
+    QStringList cliCommands = { "config", "upload" };
+    QStringList cliFlags = { "-f", "--file", "-c", "--compress", "-s", "--solo", "-a", "--api", "-h", "--help", "-v", "--version" };
 
-        qDebug() << "Headless mode started for:" << files;
-
-        QString fileToUpload;
-        if (files.size() > 1 || QFileInfo(files.first()).isDir()) {
-            QString zipName = "QuickShare_" + NameGenerator::generateRandomName() + ".zip";
-            QString zipPath = QDir::tempPath() + "/" + zipName;
-            fileToUpload = Archiver::createZip(files, zipPath);
-        } else {
-            fileToUpload = files.first();
+    for (int i = 1; i < rawArgs.size(); ++i) {
+        QString arg = rawArgs.at(i);
+        if (arg == "--background") {
+            startInBackground = true;
+            continue;
         }
-
-        if (fileToUpload.isEmpty() || !QFileInfo::exists(fileToUpload)) {
-            qCritical() << "Error: File does not exist or archiving failed.";
-            return 1;
+        
+        bool isJunk = false;
+        for (const QString& prefix : junkPrefixes) {
+            if (arg.startsWith(prefix)) { isJunk = true; break; }
         }
-
-        qint64 fileSize = QFileInfo(fileToUpload).size();
-        qint64 limit = 10LL * 1024 * 1024 * 1024;
-        if (AppConfig::instance().apiKey().isEmpty() && fileSize > limit) {
-            qCritical() << "Error: File is larger than the 10GB limit for free accounts. Please configure an API key.";
-            return 1;
+        if (!isJunk) {
+            for (const QString& exact : junkExact) {
+                if (arg == exact) { isJunk = true; break; }
+            }
         }
+        if (isJunk) continue;
+        
+        filteredArgs.append(arg);
+        
+        if (cliCommands.contains(arg) || cliFlags.contains(arg)) {
+            hasCliFlags = true;
+        } else if (!arg.startsWith("-")) {
+            filesToUpload.append(arg);
+        }
+    }
 
-        PixeldrainUploader uploader;
-        QEventLoop loop;
+    if (hasCliFlags) {
+        CliHandler cli;
+        return cli.execute(filteredArgs);
+    }
 
-        QObject::connect(&uploader, &PixeldrainUploader::uploadFinished, [&](const QString &url) {
-            qDebug() << "Upload finished:" << url;
-            QGuiApplication::clipboard()->setText(url);
-            qDebug() << "Link copied to clipboard.";
-            loop.quit();
-        });
-
-        QObject::connect(&uploader, &PixeldrainUploader::uploadError, [&](const QString &error) {
-            qCritical() << "Upload error:" << error;
-            loop.quit();
-        });
-
-        uploader.uploadFile(fileToUpload);
-        loop.exec();
-
+    QString serverName = "QuickShare_SingleInstance";
+    QLocalSocket socket;
+    socket.connectToServer(serverName);
+    if (socket.waitForConnected(500)) {
+        if (!filesToUpload.isEmpty()) {
+            socket.write(filesToUpload.join("|").toUtf8());
+            socket.waitForBytesWritten();
+        }
         return 0;
     }
+
+    QLocalServer server;
+    server.listen(serverName);
+
+    qmlRegisterSingletonType(QUrl("qrc:/qml/Theme.qml"), "QuickShare", 1, 0, "Theme");
+
+    SettingsManager settingsManager;
+    UploadController uploadController;
+    Clipboard clipboard;
+    
+    uploadController.setApiKey(settingsManager.apiKey());
+    QObject::connect(&settingsManager, &SettingsManager::apiKeyChanged, [&settingsManager, &uploadController](){
+        uploadController.setApiKey(settingsManager.apiKey());
+    });
+
+    QQmlApplicationEngine engine;
+    
+    engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
+    engine.rootContext()->setContextProperty("uploadManager", &uploadController);
+    engine.rootContext()->setContextProperty("clipboard", &clipboard);
+
+    const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
+    
+    auto handleFiles = [url, &settingsManager, &uploadController, &engine](const QStringList &files) {
+        if (files.isEmpty()) return;
+        QObject *rootObj = engine.rootObjects().first();
+        if (rootObj) {
+            QString fileName = files.size() > 1 ? settingsManager.qsTr("multiple_files") : QFileInfo(files.first()).fileName();
+            QMetaObject::invokeMethod(rootObj, "showUploadPopup", Q_ARG(QVariant, fileName), Q_ARG(QVariant, settingsManager.qsTr("calculating")));
+            uploadController.setApiKey(settingsManager.apiKey());
+            uploadController.uploadFiles(files);
+        }
+    };
+
+    QObject::connect(&server, &QLocalServer::newConnection, [&server, handleFiles]() {
+        QLocalSocket *clientSocket = server.nextPendingConnection();
+        QObject::connect(clientSocket, &QLocalSocket::readyRead, [clientSocket, handleFiles]() {
+            QString data = QString::fromUtf8(clientSocket->readAll());
+            handleFiles(data.split("|"));
+            clientSocket->disconnectFromServer();
+        });
+    });
+
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated, &app, 
+        [url, filesToUpload, startInBackground, &settingsManager, handleFiles](QObject *obj, const QUrl &objUrl) {
+            if (!obj && url == objUrl) {
+                QCoreApplication::exit(-1);
+            } else if (obj && url == objUrl) {
+                bool shouldBeVisible = !startInBackground;
+                if (startInBackground && filesToUpload.isEmpty()) {
+                    shouldBeVisible = !settingsManager.minimizeToTray();
+                } else if (startInBackground && !filesToUpload.isEmpty()) {
+                    shouldBeVisible = false; 
+                }
+                
+                obj->setProperty("visible", shouldBeVisible);
+                if (!filesToUpload.isEmpty()) {
+                    handleFiles(filesToUpload);
+                }
+            }
+        }, Qt::QueuedConnection);
+
+    engine.load(url);
+    if (engine.rootObjects().isEmpty()) {
+        return -1;
+    }
+
+    return app.exec();
 }

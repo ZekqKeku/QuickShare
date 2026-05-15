@@ -11,6 +11,7 @@ class PixeldrainUploader : public QObject {
 public:
     explicit PixeldrainUploader(QObject *parent = nullptr);
     void uploadFile(const QString &filePath);
+    void setApiKey(const QString &key);
 
 signals:
     void progressChanged(qint64 bytesSent, qint64 bytesTotal);
@@ -22,6 +23,7 @@ private slots:
 
 private:
     QNetworkAccessManager *manager;
+    QString m_apiKey;
 };
 
 #endif

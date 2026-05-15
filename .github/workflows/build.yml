@@ -2,11 +2,11 @@ name: Build and Release QuickShare
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "dev" ]
   workflow_dispatch:
     inputs:
-      force_release:
-        description: 'Force a release even if ready_for_release is false'
+      create_release:
+        description: 'Create a GitHub release'
         type: boolean
         default: false
 
@@ -67,11 +67,19 @@ jobs:
     - name: Build Project
       run: cmake --build ${{ matrix.build_folder }} --config Release -j 4
 
+    - name: Run Tests
+      shell: bash
+      run: |
+        cd ${{ matrix.build_folder }}
+        ctest -C Release --output-on-failure
+
     - name: Package macOS App
       if: runner.os == 'macOS'
       run: |
         cd ${{ matrix.build_folder }}
-        macdeployqt QuickShare.app
+        macdeployqt QuickShare.app -qmldir=../resources/qml
+        mkdir -p QuickShare.app/Contents/Resources/lang
+        cp ../src/lang/*.json QuickShare.app/Contents/Resources/lang/
         codesign --force --deep --sign - QuickShare.app
         mv QuickShare.app ${{ steps.manifest.outputs.app_id }}.app
         ditto -c -k --keepParent ${{ steps.manifest.outputs.app_id }}.app ${{ steps.manifest.outputs.app_id }}-macOS.zip
@@ -83,29 +91,78 @@ jobs:
         TARGET_EXE="build/Release/QuickShare.exe"
         if [ ! -f "$TARGET_EXE" ]; then TARGET_EXE="build/QuickShare.exe"; fi
         
-        windeployqt --release "$TARGET_EXE"
+        # Run windeployqt with qmldir to include all QML dependencies
+        windeployqt --release --qmldir resources/qml "$TARGET_EXE"
         
         APP_NAME_VER="${{ steps.manifest.outputs.app_id }}"
-        mkdir -p "${APP_NAME_VER}-Release"
+        RELEASE_DIR="${APP_NAME_VER}-Release"
+        mkdir -p "$RELEASE_DIR"
         
-        cp "$TARGET_EXE" "${APP_NAME_VER}-Release/${APP_NAME_VER}.exe"
+        # Copy the executable
+        cp "$TARGET_EXE" "$RELEASE_DIR/${APP_NAME_VER}.exe"
         
+        # Copy everything that windeployqt generated
         EXE_DIR=$(dirname "$TARGET_EXE")
-        cp "$EXE_DIR"/*.dll "${APP_NAME_VER}-Release/" 2>/dev/null || true
-        cp -r "$EXE_DIR"/platforms "${APP_NAME_VER}-Release/" 2>/dev/null || true
-        cp -r "$EXE_DIR"/styles "${APP_NAME_VER}-Release/" 2>/dev/null || true
-        cp -r "$EXE_DIR"/tls "${APP_NAME_VER}-Release/" 2>/dev/null || true
+        cp -r "$EXE_DIR"/* "$RELEASE_DIR/"
         
-        7z a "${APP_NAME_VER}-Windows.zip" "${APP_NAME_VER}-Release"
+        # Copy language files
+        mkdir -p "$RELEASE_DIR/lang"
+        cp src/lang/*.json "$RELEASE_DIR/lang/"
+        
+        # Remove the original exe if it was renamed to avoid confusion
+        if [ "$RELEASE_DIR/QuickShare.exe" != "$RELEASE_DIR/${APP_NAME_VER}.exe" ]; then
+          rm -f "$RELEASE_DIR/QuickShare.exe"
+        fi
+        
+        7z a "${APP_NAME_VER}-Windows.zip" "$RELEASE_DIR"
         
         mv "${APP_NAME_VER}-Windows.zip" build/
 
-    - name: Package Linux
+    - name: Package Linux (AppImage)
       if: runner.os == 'Linux'
+      env:
+        QT_QPA_PLATFORM: minimal
       run: |
-        cd ${{ matrix.build_folder }}
-        mv QuickShare ${{ steps.manifest.outputs.app_id }}
-        zip -j ${{ steps.manifest.outputs.app_id }}-Linux.zip ${{ steps.manifest.outputs.app_id }}
+        # Install linuxdeploy and the Qt plugin
+        wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+        wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+        chmod +x linuxdeploy*.AppImage
+        
+        # Create wrappers to avoid FUSE issues on GitHub Actions
+        echo '#!/bin/bash' > linuxdeploy-wrapper.sh
+        echo 'export APPIMAGE_EXTRACT_AND_RUN=1' >> linuxdeploy-wrapper.sh
+        echo './linuxdeploy-x86_64.AppImage "$@"' >> linuxdeploy-wrapper.sh
+        chmod +x linuxdeploy-wrapper.sh
+        
+        echo '#!/bin/bash' > linuxdeploy-plugin-qt
+        echo 'export APPIMAGE_EXTRACT_AND_RUN=1' >> linuxdeploy-plugin-qt
+        echo './linuxdeploy-plugin-qt-x86_64.AppImage "$@"' >> linuxdeploy-plugin-qt
+        chmod +x linuxdeploy-plugin-qt
+        export PATH=$PATH:.
+        
+        # Create AppDir by installing the project
+        cmake --install ${{ matrix.build_folder }} --prefix AppDir/usr
+        
+        # Set up environment for linuxdeploy
+        export QMAKE=$(which qmake || echo $QT_ROOT_DIR/bin/qmake)
+        
+        # Run linuxdeploy to create the AppImage
+        ./linuxdeploy-wrapper.sh --appdir AppDir \
+          -d AppDir/usr/share/applications/com.quickshare.app.desktop \
+          -i AppDir/usr/share/icons/hicolor/512x512/apps/com.quickshare.app.png \
+          --plugin qt \
+          --output appimage
+        
+        # Move and rename the resulting AppImage
+        APP_NAME_VER="${{ steps.manifest.outputs.app_id }}"
+        mv QuickShare*.AppImage "${APP_NAME_VER}-Linux.AppImage"
+        
+        # Zip it as well
+        zip -j "${APP_NAME_VER}-Linux.zip" "${APP_NAME_VER}-Linux.AppImage"
+        
+        # Move to build folder for upload step
+        mv "${APP_NAME_VER}-Linux.AppImage" "${{ matrix.build_folder }}/"
+        mv "${APP_NAME_VER}-Linux.zip" "${{ matrix.build_folder }}/"
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
@@ -113,12 +170,13 @@ jobs:
         name: artifact-${{ matrix.platform }}
         path: |
           ${{ matrix.build_folder }}/*.zip
+          ${{ matrix.build_folder }}/*.AppImage
 
   release:
     name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true' && github.ref == 'refs/heads/main'
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -128,19 +186,24 @@ jobs:
       run: |
         VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
         STATUS=$(python3 -c "import json; print(json.load(open('manifest.json'))['status'])")
-        READY_FILE=$(python3 -c "import json; print(str(json.load(open('manifest.json'))['ready_for_release']).lower())")
-        if [ "${{ github.event.inputs.force_release }}" == "true" ]; then
-          READY="true"
-        else
-          READY=$READY_FILE
-        fi
         echo "version=${VERSION}" >> $GITHUB_OUTPUT
         echo "status=${STATUS}" >> $GITHUB_OUTPUT
         echo "tag=${STATUS}-v${VERSION}" >> $GITHUB_OUTPUT
-        echo "ready=${READY}" >> $GITHUB_OUTPUT
+
+    - name: Check if release exists
+      id: check_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        if gh release view ${{ steps.manifest.outputs.tag }} > /dev/null 2>&1; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "Release ${{ steps.manifest.outputs.tag }} already exists. Skipping."
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Download all artifacts
-      if: steps.manifest.outputs.ready == 'true'
+      if: steps.check_release.outputs.exists == 'false'
       uses: actions/download-artifact@v4
       with:
         path: all-artifacts
@@ -148,12 +211,14 @@ jobs:
         merge-multiple: true
 
     - name: Create Release
-      if: steps.manifest.outputs.ready == 'true'
+      if: steps.check_release.outputs.exists == 'false'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.manifest.outputs.tag }}
         name: QuickShare ${{ steps.manifest.outputs.status }} v${{ steps.manifest.outputs.version }}
-        files: all-artifacts/*.zip
+        files: |
+          all-artifacts/*.zip
+          all-artifacts/*.AppImage
         draft: false
         prerelease: ${{ steps.manifest.outputs.status != 'stable' }}
       env:

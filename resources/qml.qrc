@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main.qml</file>
+        <file>qml/Theme.qml</file>
+        <file>colors.json</file>
+        <file>qml/MainWindow.qml</file>
+        <file>qml/WindowFrame.qml</file>
+        <file>qml/DropZone.qml</file>
+        <file>qml/SettingsPanel.qml</file>
+        <file>qml/UploadPopup.qml</file>
+        <file>qml/CustomProgressBar.qml</file>
+    </qresource>
+    <qresource prefix="/resources">
+        <file alias="icons/app-icon.png">com.quickshare.app.png</file>
+        <file alias="icons/tray-icon.png">com.quickshare.app.png</file>
+    </qresource>
+</RCC>
