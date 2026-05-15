@@ -121,6 +121,8 @@ target_compile_definitions(QuickShareTests PRIVATE
 target_link_libraries(QuickShareTests 
     PRIVATE 
         Qt6::Core 
+        Qt6::Gui
+        Qt6::Widgets
         Qt6::Network 
         Qt6::Test
         GTest::gtest_main
