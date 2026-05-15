@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QuickShare
+import QuickShare 1.0
 
 Item {
     id: root

@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Window
-import QuickShare
+import QuickShare 1.0
 
 Window {
     id: mainWindow

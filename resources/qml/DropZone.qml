@@ -2,8 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
-import QtCore
-import QuickShare
+import QuickShare 1.0
 
 Item {
     id: root
@@ -19,7 +18,6 @@ Item {
     FileDialog {
         id: fileDialog
         title: "Wybierz pliki do przeslania"
-        currentFolder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
         onAccepted: {
             root.filesDropped(selectedFiles)
         }

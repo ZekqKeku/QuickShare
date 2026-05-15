@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import QuickShare
+import QuickShare 1.0
 
 Item {
     id: root

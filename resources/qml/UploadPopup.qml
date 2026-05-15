@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Window
-import QuickShare
+import QuickShare 1.0
 
 Window {
     id: root
