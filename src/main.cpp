@@ -90,10 +90,11 @@ int main(int argc, char *argv[])
 
     if (!hasCliFlags && posArgs.isEmpty()) {
         QQmlApplicationEngine engine;
+        const QUrl url(QStringLiteral("qrc:/qml/main.qml"));
         qmlRegisterSingletonType(QUrl("qrc:/qml/Theme.qml"), "QuickShare", 1, 0, "Theme");
 
         QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-            &app, [url = QUrl(QStringLiteral("qrc:/qml/main.qml"))](QObject *obj, const QUrl &objUrl) {
+            &app, [url](QObject *obj, const QUrl &objUrl) {
                 if (!obj && url == objUrl)
                     QCoreApplication::exit(-1);
             }, Qt::QueuedConnection);
