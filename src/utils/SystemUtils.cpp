@@ -4,6 +4,7 @@
 #include <QProcess>
 #include <QDir>
 #include <QFileInfo>
+#include <QTextStream>
 #include "../core/AppConfig.h"
 
 #ifdef Q_OS_MAC
@@ -91,14 +92,50 @@ void SystemUtils::registerContextMenu(bool enabled) {
         regDirs.remove("");
     }
 #elif defined(Q_OS_MAC)
-    QString bundlePath = QCoreApplication::applicationDirPath() + "/../Library/Services/Share via QuickShare.workflow";
     QString destPath = QDir::homePath() + "/Library/Services/Share via QuickShare.workflow";
 
     if (enabled) {
-        if (QFile::exists(bundlePath)) {
-            QProcess::execute("cp", {"-R", bundlePath, destPath});
-            QProcess::execute("killall", {"pbs"});
+        QDir().mkpath(destPath + "/Contents");
+        
+        QFile plist(destPath + "/Contents/Info.plist");
+        if (plist.open(QIODevice::WriteOnly)) {
+            QTextStream out(&plist);
+            out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+                << "<plist version=\"1.0\">\n<dict>\n"
+                << "  <key>NSServices</key>\n  <array>\n    <dict>\n"
+                << "      <key>NSMenuItem</key>\n      <dict>\n"
+                << "        <key>default</key>\n        <string>Share via QuickShare</string>\n"
+                << "      </dict>\n"
+                << "      <key>NSMessage</key>\n      <string>runWorkflowAsService</string>\n"
+                << "      <key>NSRequiredContext</key>\n      <dict/>\n"
+                << "      <key>NSSendTypes</key>\n      <array>\n"
+                << "        <string>public.item</string>\n      </array>\n"
+                << "    </dict>\n  </array>\n</dict>\n</plist>";
         }
+
+        QFile wflow(destPath + "/Contents/document.wflow");
+        if (wflow.open(QIODevice::WriteOnly)) {
+            QTextStream out(&wflow);
+            out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+                << "<plist version=\"1.0\">\n<dict>\n"
+                << "  <key>actions</key>\n  <array>\n    <dict>\n"
+                << "      <key>action</key>\n      <dict>\n"
+                << "        <key>ActionParameters</key>\n        <dict>\n"
+                << "          <key>COMMAND_STRING</key>\n"
+                << "          <string>\"" << appPath << "\" \"$@\"</string>\n"
+                << "          <key>inputMethod</key>\n          <integer>1</integer>\n"
+                << "        </dict>\n"
+                << "        <key>ActionBundlePath</key>\n        <string>/System/Library/Automator/Run Shell Script.action</string>\n"
+                << "        <key>ActionName</key>\n        <string>Run Shell Script</string>\n"
+                << "      </dict>\n    </dict>\n  </array>\n"
+                << "  <key>workflowMetaData</key>\n  <dict>\n"
+                << "    <key>serviceInputTypeIdentifier</key>\n    <string>com.apple.Automator.fileSystemObject</string>\n"
+                << "    <key>workflowTypeIdentifier</key>\n    <string>com.apple.Automator.servicesMenu</string>\n"
+                << "  </dict>\n</dict>\n</plist>";
+        }
+        QProcess::execute("killall", {"pbs"});
     } else {
         QProcess::execute("rm", {"-rf", destPath});
         QProcess::execute("killall", {"pbs"});

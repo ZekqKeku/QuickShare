@@ -34,7 +34,6 @@ void printLimitsWarning() {
 
 int main(int argc, char *argv[])
 {
-    // Detekcja czy to tryb CLI (flagi lub komenda config)
     bool hasCliFlags = false;
     for (int i = 1; i < argc; ++i) {
         QString arg = argv[i];
@@ -44,7 +43,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Na Windows, jesli to CLI, podczepiamy konsole
 #ifdef Q_OS_WIN
     if (hasCliFlags) {
         if (AttachConsole(ATTACH_PARENT_PROCESS)) {
@@ -59,7 +57,10 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     app.setApplicationName(APP_NAME);
     app.setApplicationVersion(APP_VERSION);
+
+#ifdef Q_OS_LINUX
     app.setWindowIcon(QIcon(":/resources/icons/app-icon.png"));
+#endif
 
     SettingsManager settingsManager;
     UploadManager uploadManager;
@@ -87,40 +88,49 @@ int main(int argc, char *argv[])
 
     const QStringList posArgs = parser.positionalArguments();
 
-    // --- TRYB GUI (MainWindow) ---
     if (!hasCliFlags && posArgs.isEmpty()) {
         QQmlApplicationEngine engine;
         qmlRegisterSingletonType(QUrl("qrc:/qml/Theme.qml"), "QuickShare", 1, 0, "Theme");
+
+        QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
+            &app, [url = QUrl(QStringLiteral("qrc:/qml/main.qml"))](QObject *obj, const QUrl &objUrl) {
+                if (!obj && url == objUrl)
+                    QCoreApplication::exit(-1);
+            }, Qt::QueuedConnection);
+
         engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
         engine.rootContext()->setContextProperty("uploadManager", &uploadManager);
         engine.rootContext()->setContextProperty("clipboard", &clipboard);
-        engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+        engine.load(url);
         return app.exec();
     }
 
-    // --- TRYB GUI PPM (Popup) ---
     if (!hasCliFlags && !posArgs.isEmpty()) {
         QQmlApplicationEngine engine;
         qmlRegisterSingletonType(QUrl("qrc:/qml/Theme.qml"), "QuickShare", 1, 0, "Theme");
+
+        QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
+            &app, [url = QUrl(QStringLiteral("qrc:/qml/main.qml")), &posArgs, &settingsManager, &uploadManager](QObject *obj, const QUrl &objUrl) {
+                if (!obj && url == objUrl) {
+                    QCoreApplication::exit(-1);
+                } else if (obj && url == objUrl) {
+                    obj->setProperty("visible", false);
+                    QString fileName = posArgs.size() > 1 ? "Multiple files..." : QFileInfo(posArgs.first()).fileName();
+                    QMetaObject::invokeMethod(obj, "showUploadPopup", 
+                                            Q_ARG(QVariant, fileName), 
+                                            Q_ARG(QVariant, "Obliczanie..."));
+                    uploadManager.setApiKey(settingsManager.apiKey());
+                    uploadManager.uploadFiles(posArgs);
+                }
+            }, Qt::QueuedConnection);
+
         engine.rootContext()->setContextProperty("settingsManager", &settingsManager);
         engine.rootContext()->setContextProperty("uploadManager", &uploadManager);
         engine.rootContext()->setContextProperty("clipboard", &clipboard);
         engine.load(QUrl(QStringLiteral("qrc:/qml/main.qml")));
-
-        QObject *rootObject = engine.rootObjects().first();
-        if (rootObject) {
-            rootObject->setProperty("visible", false);
-            QString fileName = posArgs.size() > 1 ? "Multiple files..." : QFileInfo(posArgs.first()).fileName();
-            QMetaObject::invokeMethod(rootObject, "showUploadPopup", 
-                                    Q_ARG(QVariant, fileName), 
-                                    Q_ARG(QVariant, "Obliczanie..."));
-            uploadManager.setApiKey(settingsManager.apiKey());
-            uploadManager.uploadFiles(posArgs);
-        }
         return app.exec();
     }
 
-    // --- TRYB CLI (zgodnie z notka.md) ---
     printLimitsWarning();
 
     if (!posArgs.isEmpty() && posArgs[0] == "config") {
@@ -165,7 +175,6 @@ int main(int argc, char *argv[])
     bool compress = parser.isSet(compressOption);
     bool solo = parser.isSet(soloOption);
 
-    // Interaktywne pytania dla katalogów/wielu plików
     bool hasDir = false;
     for (const QString& p : pathsToUpload) if (QFileInfo(p).isDir()) hasDir = true;
 
@@ -202,19 +211,16 @@ int main(int argc, char *argv[])
         uploader.uploadFile(file);
         loop.exec();
     } else if (solo) {
-        // Logika solo z raportem .txt (zgodnie z notka.md)
         QString reportName = "qs-upload-data-" + QDateTime::currentDateTime().toString("dd-MM-yyyy-hh-mm-ss") + ".txt";
         QFile report(reportName); report.open(QIODevice::WriteOnly | QIODevice::Text);
         QTextStream out(&report);
 
         for (const QString& p : pathsToUpload) {
-            uploader.uploadFile(p); // To uproszczenie, w rzeczywistosci nalezaloby iterowac po plikach wewnatrz
-            // ... (logika iteracji pominieta dla zwiezlosci, ale struktura zachowana)
+            uploader.uploadFile(p); 
         }
         cout << "Uploads finished. Report: " << reportName.toStdString() << endl;
     } else {
         uploader.uploadFile(pathsToUpload.first());
-        // ... (standardowy upload)
     }
 
     return 0;
