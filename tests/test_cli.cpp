@@ -10,8 +10,8 @@
 class CliHandlerTest : public ::testing::Test {
 protected:
     static void SetUpTestSuite() {
-        int argc = 1;
-        static char* argv[] = {(char*)"QuickShareTests"};
+        static int argc = 1;
+        static char* argv[] = {(char*)"QuickShareTests", nullptr};
         static QCoreApplication app(argc, argv);
         QCoreApplication::setOrganizationName("QuickShareTests");
         QCoreApplication::setApplicationName("QuickShareCliTest");
