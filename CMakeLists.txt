@@ -26,7 +26,7 @@ elseif(APPLE AND EXISTS "/usr/local/opt/qt")
     list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt")
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Network Test)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Widgets Network Test)
 
 set(QUICKSHARE_SOURCES
     src/core/AppConfig.h src/core/AppConfig.cpp
@@ -87,6 +87,7 @@ target_link_libraries(QuickShare PRIVATE
     Qt6::Qml 
     Qt6::Quick 
     Qt6::QuickControls2 
+    Qt6::Widgets
     Qt6::Network
 )
 
