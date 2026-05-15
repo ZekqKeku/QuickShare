@@ -172,12 +172,20 @@ int CliHandler::handleUpload(const QStringList &posArgs, bool compress, bool sol
         uploader.uploadFile(file);
         loop.exec();
     } else if (solo) {
+        QString reportFileName = "qs-upload-data(" + QDateTime::currentDateTime().toString("dd-MM-yyyy-hh-mm-ss") + ").txt";
+        QFile reportFile(reportFileName);
+        bool reportOpen = reportFile.open(QIODevice::WriteOnly | QIODevice::Text);
+        QTextStream reportStream(&reportFile);
+
         for (const QString& p : pathsToUpload) {
             cout << "Uploading " << QFileInfo(p).fileName().toStdString() << "..." << endl;
             uploader.uploadFile(p); 
             QEventLoop fileLoop;
             auto conn1 = QObject::connect(&uploader, &PixeldrainUploader::uploadFinished, [&](const QString &url) {
                 cout << "Link: " << url.toStdString() << endl;
+                if (reportOpen) {
+                    reportStream << QFileInfo(p).fileName() << " - " << url << "\n";
+                }
                 fileLoop.quit();
             });
             auto conn2 = QObject::connect(&uploader, &PixeldrainUploader::uploadError, [&](const QString &err) {
@@ -188,23 +196,13 @@ int CliHandler::handleUpload(const QStringList &posArgs, bool compress, bool sol
             QObject::disconnect(conn1);
             QObject::disconnect(conn2);
         }
+        if (reportOpen) {
+            reportFile.close();
+            cout << "Upload report saved to: " << reportFileName.toStdString() << endl;
+        }
     } else {
         connectLog(QFileInfo(pathsToUpload.first()).fileName());
         QObject::connect(&uploader, &PixeldrainUploader::uploadFinished, [&](const QString &url) {
-            cout << "\nLink: " << url.toStdString() << endl;
-            loop.quit();
-        });
-        QObject::connect(&uploader, &PixeldrainUploader::uploadError, [&](const QString &err) {
-            cerr << "\nUpload error: " << err.toStdString() << endl;
-            loop.quit();
-        });
-        uploader.uploadFile(pathsToUpload.first());
-        loop.exec();
-    }
-
-    return 0;
-}
-shed, [&](const QString &url) {
             cout << "\nLink: " << url.toStdString() << endl;
             loop.quit();
         });

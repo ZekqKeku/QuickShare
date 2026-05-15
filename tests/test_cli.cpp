@@ -19,7 +19,7 @@ protected:
 
     void SetUp() override {
         SettingsManager settings;
-        settings.removeAllData(); // Start with clean state
+        settings.removeAllData();
     }
 
     void TearDown() override {
@@ -75,7 +75,6 @@ TEST_F(CliHandlerTest, UploadFailsWithoutApiKeyAndShowsLink) {
     settings.setApiKey("");
     settings.save();
 
-    // Capture stderr
     std::stringstream ss;
     std::streambuf* orig_cerr = std::cerr.rdbuf(ss.rdbuf());
 
@@ -100,25 +99,7 @@ TEST_F(CliHandlerTest, SoloUploadCreatesReportFile) {
     f.write("test content");
     f.close();
 
-    // We can't easily mock the network for actual upload success here 
-    // without more refactoring, but we can verify that CliHandler 
-    // attempts to create the file or uses the right logic.
-    // However, since handleUpload uses a loop and uploader, it will wait for success.
-    
-    // To avoid hanging in tests, we can skip actual network calls 
-    // or mock PixeldrainUploader. For now, let's verify if the 
-    // report logic exists in the code via execution if possible, 
-    // or just ensure no crash.
-    
-    // Actually, testing the file existence after a failed upload 
-    // (since dummy-key is invalid) might still show the report file 
-    // if it was opened.
-    
     QStringList args = {"qs", "-s", filePath};
-    
-    // This will try to upload and fail, but let's see if it creates a report file.
-    // Because the uploader will return an error, the test might wait.
-    // For unit tests, we should ideally mock the uploader.
 }
 
 TEST_F(CliHandlerTest, CompressAndSoloConflict) {
@@ -147,7 +128,6 @@ TEST_F(CliHandlerTest, UseTemporaryApiKey) {
 
     QStringList args = {"qs", "-a", "temp-key", "nonexistent.txt"};
     int result = handler.execute(args);
-    // It should fail with "File does not exist" which is code 1
     EXPECT_EQ(result, 1);
 }
 
@@ -167,7 +147,6 @@ TEST_F(CliHandlerTest, DirectoryHandlingRequiresInteraction) {
     QTemporaryDir dir;
     ASSERT_TRUE(dir.isValid());
 
-    // Mock stdin to provide "n" then "n" (Cancel)
     std::stringstream ss;
     ss << "n\nn\n";
     std::streambuf* orig_cin = std::cin.rdbuf(ss.rdbuf());
@@ -176,5 +155,5 @@ TEST_F(CliHandlerTest, DirectoryHandlingRequiresInteraction) {
     int result = handler.execute(args);
     
     std::cin.rdbuf(orig_cin);
-    EXPECT_EQ(result, 0); // Upload cancelled returns 0
+    EXPECT_EQ(result, 0);
 }
