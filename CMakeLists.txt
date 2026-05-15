@@ -26,12 +26,14 @@ elseif(APPLE AND EXISTS "/usr/local/opt/qt")
     list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt")
 endif()
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Test)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 Network Test)
 
 set(QUICKSHARE_SOURCES
     src/core/AppConfig.h src/core/AppConfig.cpp
     src/core/LanguageManager.h src/core/LanguageManager.cpp
+    src/core/SettingsManager.h src/core/SettingsManager.cpp
     src/network/PixeldrainUploader.h src/network/PixeldrainUploader.cpp
+    src/network/UploadManager.h src/network/UploadManager.cpp
     src/utils/Archiver.h src/utils/Archiver.cpp
     src/utils/NameGenerator.h src/utils/NameGenerator.cpp
     src/utils/SystemUtils.h src/utils/SystemUtils.cpp
@@ -41,10 +43,12 @@ if(APPLE)
     list(APPEND QUICKSHARE_SOURCES src/utils/MacUtils.mm)
 endif()
 
+qt_add_resources(RESOURCES resources/qml.qrc)
+
 add_executable(QuickShare WIN32 MACOSX_BUNDLE
     src/main.cpp
     ${QUICKSHARE_SOURCES}
-    src/gui/MainWindow.h src/gui/MainWindow.cpp src/gui/MainWindow.ui
+    ${RESOURCES}
 )
 
 # Copy lang files to build directory
@@ -77,7 +81,14 @@ if(APPLE)
 elseif(WIN32)
 endif()
 
-target_link_libraries(QuickShare PRIVATE Qt6::Core Qt6::Widgets Qt6::Network)
+target_link_libraries(QuickShare PRIVATE 
+    Qt6::Core 
+    Qt6::Gui 
+    Qt6::Qml 
+    Qt6::Quick 
+    Qt6::QuickControls2 
+    Qt6::Network
+)
 
 # --- Tests ---
 include(FetchContent)

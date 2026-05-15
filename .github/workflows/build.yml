@@ -5,8 +5,8 @@ on:
     branches: [ "main", "master", "dev" ]
   workflow_dispatch:
     inputs:
-      force_release:
-        description: 'Force a release even if ready_for_release is false'
+      create_release:
+        description: 'Create a GitHub release'
         type: boolean
         default: false
 
@@ -164,7 +164,7 @@ jobs:
     name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true' && github.ref == 'refs/heads/main'
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -174,19 +174,24 @@ jobs:
       run: |
         VERSION=$(python3 -c "import json; print(json.load(open('manifest.json'))['version'])")
         STATUS=$(python3 -c "import json; print(json.load(open('manifest.json'))['status'])")
-        READY_FILE=$(python3 -c "import json; print(str(json.load(open('manifest.json'))['ready_for_release']).lower())")
-        if [ "${{ github.event.inputs.force_release }}" == "true" ]; then
-          READY="true"
-        else
-          READY=$READY_FILE
-        fi
         echo "version=${VERSION}" >> $GITHUB_OUTPUT
         echo "status=${STATUS}" >> $GITHUB_OUTPUT
         echo "tag=${STATUS}-v${VERSION}" >> $GITHUB_OUTPUT
-        echo "ready=${READY}" >> $GITHUB_OUTPUT
+
+    - name: Check if release exists
+      id: check_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        if gh release view ${{ steps.manifest.outputs.tag }} > /dev/null 2>&1; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "Release ${{ steps.manifest.outputs.tag }} already exists. Skipping."
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Download all artifacts
-      if: steps.manifest.outputs.ready == 'true'
+      if: steps.check_release.outputs.exists == 'false'
       uses: actions/download-artifact@v4
       with:
         path: all-artifacts
@@ -194,7 +199,7 @@ jobs:
         merge-multiple: true
 
     - name: Create Release
-      if: steps.manifest.outputs.ready == 'true'
+      if: steps.check_release.outputs.exists == 'false'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.manifest.outputs.tag }}
