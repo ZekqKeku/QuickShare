@@ -77,7 +77,9 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         cd ${{ matrix.build_folder }}
-        macdeployqt QuickShare.app
+        macdeployqt QuickShare.app -qmldir=../resources/qml
+        mkdir -p QuickShare.app/Contents/Resources/lang
+        cp ../src/lang/*.json QuickShare.app/Contents/Resources/lang/
         codesign --force --deep --sign - QuickShare.app
         mv QuickShare.app ${{ steps.manifest.outputs.app_id }}.app
         ditto -c -k --keepParent ${{ steps.manifest.outputs.app_id }}.app ${{ steps.manifest.outputs.app_id }}-macOS.zip
@@ -89,20 +91,30 @@ jobs:
         TARGET_EXE="build/Release/QuickShare.exe"
         if [ ! -f "$TARGET_EXE" ]; then TARGET_EXE="build/QuickShare.exe"; fi
         
-        windeployqt --release "$TARGET_EXE"
+        # Run windeployqt with qmldir to include all QML dependencies
+        windeployqt --release --qmldir resources/qml "$TARGET_EXE"
         
         APP_NAME_VER="${{ steps.manifest.outputs.app_id }}"
-        mkdir -p "${APP_NAME_VER}-Release"
+        RELEASE_DIR="${APP_NAME_VER}-Release"
+        mkdir -p "$RELEASE_DIR"
         
-        cp "$TARGET_EXE" "${APP_NAME_VER}-Release/${APP_NAME_VER}.exe"
+        # Copy the executable
+        cp "$TARGET_EXE" "$RELEASE_DIR/${APP_NAME_VER}.exe"
         
+        # Copy everything that windeployqt generated
         EXE_DIR=$(dirname "$TARGET_EXE")
-        cp "$EXE_DIR"/*.dll "${APP_NAME_VER}-Release/" 2>/dev/null || true
-        cp -r "$EXE_DIR"/platforms "${APP_NAME_VER}-Release/" 2>/dev/null || true
-        cp -r "$EXE_DIR"/styles "${APP_NAME_VER}-Release/" 2>/dev/null || true
-        cp -r "$EXE_DIR"/tls "${APP_NAME_VER}-Release/" 2>/dev/null || true
+        cp -r "$EXE_DIR"/* "$RELEASE_DIR/"
         
-        7z a "${APP_NAME_VER}-Windows.zip" "${APP_NAME_VER}-Release"
+        # Copy language files
+        mkdir -p "$RELEASE_DIR/lang"
+        cp src/lang/*.json "$RELEASE_DIR/lang/"
+        
+        # Remove the original exe if it was renamed to avoid confusion
+        if [ "$RELEASE_DIR/QuickShare.exe" != "$RELEASE_DIR/${APP_NAME_VER}.exe" ]; then
+          rm -f "$RELEASE_DIR/QuickShare.exe"
+        fi
+        
+        7z a "${APP_NAME_VER}-Windows.zip" "$RELEASE_DIR"
         
         mv "${APP_NAME_VER}-Windows.zip" build/
 
