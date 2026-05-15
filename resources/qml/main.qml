@@ -15,7 +15,47 @@ Window {
     flags: Qt.Window | Qt.FramelessWindowHint
     color: "transparent"
     
-    title: "QuickShare"
+    title: (settingsManager.translationContext, settingsManager.qsTr("app_title"))
+
+    palette {
+        window: Theme.background
+        windowText: Theme.foreground
+        base: Theme.input
+        text: Theme.foreground
+        button: Theme.card
+        buttonText: Theme.foreground
+        highlight: Theme.primary
+        highlightedText: Theme.primaryForeground
+        accent: Theme.primary
+        mid: Theme.border
+        brightText: Theme.primaryForeground
+        toolTipBase: Theme.card
+        toolTipText: Theme.foreground
+    }
+    
+    Connections {
+        target: settingsManager
+        function onThemeModeChanged() { updateTheme() }
+        function onAccentColorChanged() { updateTheme() }
+        function onSettingsLoaded() { updateTheme() }
+        function onSystemThemeChanged() { 
+            if (settingsManager.themeMode === 0) updateTheme() 
+        }
+    }
+    
+    function updateTheme() {
+        var mode = settingsManager.themeMode
+        if (mode === 0) { 
+            Theme.isDarkMode = settingsManager.isSystemDarkMode
+        } else {
+            Theme.isDarkMode = (mode === 2)
+        }
+        Theme.accentColor = settingsManager.accentColor
+    }
+
+    Component.onCompleted: {
+        updateTheme()
+    }
     
     MainWindow {
         anchors.fill: parent
@@ -24,39 +64,30 @@ Window {
     
     Component {
         id: uploadPopupComponent
-        
         UploadPopup {
-            onCopyClicked: {
-                clipboard.setText(fileUrl)
-            }
-            
-            onCancelClicked: {
-                close()
-            }
-            
-            onCloseRequested: {
-                close()
-                destroy()
-            }
+            onCopyClicked: { clipboard.setText(fileUrl) }
+            onCancelClicked: { close() }
+            onCloseRequested: { close(); destroy() }
         }
     }
     
-    function showUploadPopup(fileName, fileSize) {
+    function showUploadPopup(initialFileName, initialFileSize) {
         var popup = uploadPopupComponent.createObject(null, {
-            fileName: fileName,
-            fileSize: fileSize,
+            fileName: initialFileName,
+            fileSize: initialFileSize,
             x: Screen.width - 400,
             y: Screen.height - 250,
             uploadProgress: Qt.binding(function() { return uploadManager.progress }),
             uploadSpeed: Qt.binding(function() { return uploadManager.speed }),
             fileUrl: Qt.binding(function() { return uploadManager.lastUploadUrl })
         })
+
+        popup.fileName = Qt.binding(function() { return uploadManager.currentFileName || initialFileName })
+        popup.fileSize = Qt.binding(function() { return uploadManager.currentFileSize || initialFileSize })
         
         var onCompleted = function(finishedFileName, url) {
-            if (finishedFileName === fileName) {
-                popup.isCompleted = true
-                uploadManager.uploadCompleted.disconnect(onCompleted)
-            }
+            popup.isCompleted = true
+            uploadManager.uploadCompleted.disconnect(onCompleted)
         }
         uploadManager.uploadCompleted.connect(onCompleted)
         

@@ -17,15 +17,16 @@ QString Archiver::createZip(const QStringList &paths, const QString &outputZipPa
     }
     process.start("tar", arguments);
 #else
-    arguments << "-j" << outputZipPath; 
+    arguments << "-r" << outputZipPath; 
     for (const QString &path : paths) {
         arguments << path;
     }
     process.start("zip", arguments);
 #endif
 
-    if (!process.waitForFinished()) {
-        qDebug() << "Archiver error:" << process.errorString();
+    if (!process.waitForFinished(30000)) { 
+        qDebug() << "Archiver error or timeout:" << process.errorString();
+        process.kill();
         return "";
     }
 

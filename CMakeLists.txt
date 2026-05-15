@@ -136,7 +136,6 @@ target_link_libraries(QuickShareTests
 
 add_test(NAME QuickShareTests COMMAND QuickShareTests)
 
-
 install(TARGETS QuickShare
     BUNDLE DESTINATION .
     RUNTIME DESTINATION bin

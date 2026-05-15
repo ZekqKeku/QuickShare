@@ -17,7 +17,7 @@ Item {
     
     FileDialog {
         id: fileDialog
-        title: "Wybierz pliki do przeslania"
+        title: (settingsManager.translationContext, settingsManager.qsTr("select_files_dialog"))
         onAccepted: {
             root.filesDropped(selectedFiles)
         }
@@ -25,17 +25,21 @@ Item {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: Theme.spacingLarge
-        spacing: Theme.spacingLarge
+        anchors.margins: Theme.spacingMedium
+        spacing: Theme.spacingMedium
         
         Rectangle {
             id: dropArea
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.preferredHeight: root.isUploading || root.uploadedFileUrl !== "" ? 120 : parent.height * 0.6
             radius: Theme.radiusLarge
             color: dropMouseArea.containsDrag ? Theme.secondaryHover : Theme.secondary
             border.width: 2
             border.color: dropMouseArea.containsDrag ? Theme.primary : Theme.border
+            
+            Behavior on Layout.preferredHeight {
+                NumberAnimation { duration: Theme.animationNormal; easing.type: Easing.OutCubic }
+            }
             
             Canvas {
                 anchors.fill: parent
@@ -56,7 +60,7 @@ Item {
             DropArea {
                 id: dropMouseArea
                 anchors.fill: parent
-                onDropped: {
+                onDropped: (drop) => {
                     if (drop.hasUrls) {
                         root.filesDropped(drop.urls)
                     }
@@ -65,107 +69,138 @@ Item {
             
             ColumnLayout {
                 anchors.centerIn: parent
-                spacing: Theme.spacingMedium
+                spacing: Theme.spacingSmall
                 visible: !root.isUploading && root.uploadedFileUrl === ""
                 
                 Rectangle {
                     Layout.alignment: Qt.AlignHCenter
-                    width: 64; height: 64; radius: 32
+                    width: 48; height: 48; radius: 24
                     color: Theme.card
                     border.width: 1; border.color: Theme.border
-                    Text { anchors.centerIn: parent; text: "\u2191"; font.pixelSize: 32; color: Theme.primary }
+                    Text { anchors.centerIn: parent; text: "\u2191"; font.pixelSize: 24; color: Theme.primary }
+                }
+                
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: (settingsManager.translationContext, settingsManager.qsTr("drop_files_here"))
+                    color: Theme.foreground
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeMedium
+                    font.weight: Font.DemiBold
+                }
+                
+                Button {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: (settingsManager.translationContext, settingsManager.qsTr("select_files"))
+                    onClicked: fileDialog.open()
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeNormal
+                        color: Theme.foreground
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        leftPadding: Theme.spacingMedium
+                        rightPadding: Theme.spacingMedium
+                    }
+                    
+                    background: Rectangle {
+                        implicitHeight: 36
+                        color: parent.hovered ? Theme.cardHover : Theme.card
+                        border.color: Theme.border
+                        border.width: 1
+                        radius: Theme.radiusNormal
+                    }
+                }
+            }
+
+            RowLayout {
+                anchors.centerIn: parent
+                width: parent.width - 40
+                visible: root.isUploading
+                spacing: Theme.spacingMedium
+                
+                Rectangle {
+                    width: 40; height: 40; radius: Theme.radiusNormal; color: Theme.card
+                    Text { anchors.centerIn: parent; text: "\uD83D\uDCC4"; font.pixelSize: 20; color: Theme.primary }
                 }
                 
                 ColumnLayout {
-                    spacing: 4
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "Przeciagnij i upusc pliki"
-                        color: Theme.foreground
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeLarge
-                        font.weight: Font.SemiBold
-                    }
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: "Obslugujemy wszystkie formaty plikow"
-                        color: Theme.mutedForeground
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeSmall
-                    }
-                }
-                
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 160; height: 40; radius: Theme.radiusNormal
-                    color: selectBtnArea.containsMouse ? Theme.primaryHover : Theme.primary
-                    Text { anchors.centerIn: parent; text: "Wybierz pliki"; color: "#ffffff"; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeNormal; font.weight: Font.Medium }
-                    MouseArea { id: selectBtnArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: fileDialog.open() }
+                    Layout.fillWidth: true; spacing: 2
+                    Text { text: root.uploadedFileName; color: Theme.foreground; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Medium; elide: Text.ElideMiddle; Layout.fillWidth: true }
+                    CustomProgressBar { Layout.fillWidth: true; value: root.uploadProgress; barHeight: 4; showPercentage: false; showSpeed: false }
+                    Text { text: (settingsManager.translationContext, settingsManager.qsTr("uploading")) + root.uploadSpeed; color: Theme.mutedForeground; font.pixelSize: 10 }
                 }
             }
-            
+
             ColumnLayout {
                 anchors.centerIn: parent
-                width: parent.width - 80
-                spacing: Theme.spacingLarge
-                visible: root.isUploading
+                width: parent.width - 40
+                visible: !root.isUploading && root.uploadedFileUrl !== ""
+                spacing: 8
+                
+                Text { Layout.alignment: Qt.AlignHCenter; text: (settingsManager.translationContext, settingsManager.qsTr("upload_success")); color: Theme.success; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Bold }
                 
                 RowLayout {
-                    spacing: Theme.spacingMedium
-                    Rectangle {
-                        width: 48; height: 48; radius: Theme.radiusNormal; color: Theme.card
-                        Text { anchors.centerIn: parent; text: "\uD83D\uDCC4"; font.pixelSize: 24; color: Theme.primary }
+                    Layout.fillWidth: true
+                    TextField {
+                        id: urlField
+                        Layout.fillWidth: true
+                        text: root.uploadedFileUrl
+                        readOnly: true
+                        font.pixelSize: Theme.fontSizeSmall
+                        color: Theme.foreground
+                        selectionColor: Theme.primary
+                        selectedTextColor: "#ffffff"
+                        
+                        background: Rectangle {
+                            implicitHeight: 36
+                            color: Theme.input
+                            border.color: Theme.border
+                            border.width: 1
+                            radius: Theme.radiusNormal
+                        }
                     }
-                    ColumnLayout {
-                        Layout.fillWidth: true; spacing: 2
-                        Text { text: root.uploadedFileName; color: Theme.foreground; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeMedium; font.weight: Font.Medium; elide: Text.ElideMiddle; Layout.fillWidth: true }
-                        Text { text: "Przesylanie... " + root.uploadSpeed; color: Theme.mutedForeground; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeSmall }
-                    }
-                }
-                
-                CustomProgressBar { Layout.fillWidth: true; value: root.uploadProgress; barHeight: 8 }
-            }
-            
-            ColumnLayout {
-                anchors.centerIn: parent
-                width: parent.width - 80
-                spacing: Theme.spacingLarge
-                visible: !root.isUploading && root.uploadedFileUrl !== ""
-                
-                Rectangle {
-                    Layout.alignment: Qt.AlignHCenter
-                    width: 64; height: 64; radius: 32; color: Qt.rgba(Theme.success.r, Theme.success.g, Theme.success.b, 0.1)
-                    Text { anchors.centerIn: parent; text: "\u2713"; font.pixelSize: 32; color: Theme.success }
-                }
-                
-                ColumnLayout {
-                    spacing: Theme.spacingSmall
-                    Text { Layout.alignment: Qt.AlignHCenter; text: "Przeslano pomyslnie!"; color: Theme.foreground; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeLarge; font.weight: Font.Bold }
-                    
-                    Rectangle {
-                        Layout.preferredWidth: parent.parent.width; height: 44; radius: Theme.radiusNormal; color: Theme.card; border.width: 1; border.color: Theme.border
-                        RowLayout {
-                            anchors.fill: parent; anchors.margins: 1; spacing: 0
-                            TextInput { Layout.fillWidth: true; Layout.leftMargin: Theme.spacingMedium; text: root.uploadedFileUrl; color: Theme.foreground; font.family: Theme.fontFamily; readOnly: true; verticalAlignment: Text.AlignVCenter }
-                            Rectangle {
-                                width: 100; height: parent.height; radius: Theme.radiusNormal; color: copyBtnArea2.containsMouse ? Theme.primaryHover : Theme.primary
-                                Text { anchors.centerIn: parent; text: "Kopiuj"; color: "#ffffff"; font.weight: Font.Medium }
-                                MouseArea { id: copyBtnArea2; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { clipboard.setText(root.uploadedFileUrl); } }
-                            }
+                    Button {
+                        text: (settingsManager.translationContext, settingsManager.qsTr("copy"))
+                        onClicked: {
+                            clipboard.setText(root.uploadedFileUrl)
+                            urlField.selectAll()
+                        }
+                        
+                        contentItem: Text {
+                            text: parent.text
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeNormal
+                            color: Theme.foreground
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            leftPadding: Theme.spacingMedium
+                            rightPadding: Theme.spacingMedium
+                        }
+                        
+                        background: Rectangle {
+                            implicitHeight: 36
+                            color: parent.hovered ? Theme.cardHover : Theme.card
+                            border.color: Theme.border
+                            border.width: 1
+                            radius: Theme.radiusNormal
                         }
                     }
                 }
                 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
-                    text: "Wroc do startu"
-                    color: Theme.mutedForeground
-                    font.family: Theme.fontFamily
+                    text: (settingsManager.translationContext, settingsManager.qsTr("send_another"))
+                    color: Theme.primary
                     font.pixelSize: Theme.fontSizeSmall
                     font.underline: true
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.uploadedFileUrl = ""; root.uploadedFileName = ""; } }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: (mouse) => uploadManager.clearLastUpload() }
                 }
             }
         }
+        
+        Item { Layout.fillHeight: true }
     }
 }

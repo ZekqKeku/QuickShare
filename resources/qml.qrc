@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>qml/main.qml</file>
         <file>qml/Theme.qml</file>
+        <file>colors.json</file>
         <file>qml/MainWindow.qml</file>
         <file>qml/WindowFrame.qml</file>
         <file>qml/DropZone.qml</file>

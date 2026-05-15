@@ -17,12 +17,14 @@ Window {
     flags: Qt.Window | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
     color: "transparent"
     
-    property string fileName: "plik.pdf"
-    property string fileSize: "2.4 MB"
+    property string fileName: ""
+    property string fileSize: ""
     property real uploadProgress: 0.0
-    property string uploadSpeed: "0 KB/s"
+    property string uploadSpeed: ""
     property bool isCompleted: false
     property string fileUrl: ""
+    
+    readonly property bool isMac: Qt.platform.os === "osx" || Qt.platform.os === "macos"
     
     signal copyClicked()
     signal cancelClicked()
@@ -62,40 +64,84 @@ Window {
                 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: Theme.spacingMedium
-                    anchors.rightMargin: Theme.spacingSmall
-                    
+                    anchors.leftMargin: root.isMac ? 12 : Theme.spacingMedium
+                    anchors.rightMargin: root.isMac ? 12 : Theme.spacingSmall
+                    spacing: root.isMac ? 0 : Theme.spacingSmall
+
                     Rectangle {
-                        width: 20; height: 20; radius: 4
-                        color: Theme.primary
-                        Text { anchors.centerIn: parent; text: "Q"; color: "#ffffff"; font.pixelSize: 11; font.weight: Font.Bold }
+                        visible: root.isMac
+                        width: 12; height: 12; radius: 6
+                        color: closeBtnAreaMac.containsMouse ? "#ff5f56" : "#ff605c"
+                        border.width: 1
+                        border.color: Qt.darker(color, 1.2)
+                        
+                        Text {
+                            anchors.centerIn: parent
+                            text: "\u2715"
+                            font.pixelSize: 8
+                            visible: closeBtnAreaMac.containsMouse
+                            color: Qt.darker("#ff605c", 2.0)
+                        }
+                        
+                        MouseArea {
+                            id: closeBtnAreaMac
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: root.closeRequested()
+                        }
                     }
-                    
+
+                    Rectangle {
+                        visible: !root.isMac
+                        width: 24; height: 24; radius: 12
+                        color: Theme.primary
+                        Text { anchors.centerIn: parent; text: "Q"; color: "#ffffff"; font.pixelSize: 12; font.weight: Font.Bold }
+                    }
+
                     Text {
-                        text: "Szybkie Przesylanie"
+                        Layout.fillWidth: true
+                        text: root.isCompleted 
+                            ? (settingsManager.translationContext, settingsManager.qsTr("upload_finished"))
+                            : (settingsManager.translationContext, settingsManager.qsTr("quick_upload"))
                         color: Theme.foreground
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSizeSmall
                         font.weight: Font.Medium
+                        horizontalAlignment: root.isMac ? Text.AlignHCenter : Text.AlignLeft
+                        
+                        leftPadding: root.isMac ? -12 : 0 
                     }
-                    
-                    Item { Layout.fillWidth: true }
-                    
+
                     Rectangle {
+                        visible: !root.isMac
                         width: 28; height: 24; radius: Theme.radiusSmall
-                        color: closeBtnArea.containsMouse ? Theme.destructive : "transparent"
+                        color: closeBtnArea.containsMouse ? Theme.error : "transparent"
                         Text { anchors.centerIn: parent; text: "\u2715"; color: closeBtnArea.containsMouse ? "#ffffff" : Theme.mutedForeground; font.pixelSize: 10 }
                         MouseArea { id: closeBtnArea; anchors.fill: parent; hoverEnabled: true; onClicked: root.closeRequested() }
+                    }
+
+                    Item {
+                        visible: root.isMac
+                        width: 12
                     }
                 }
                 
                 MouseArea {
                     anchors.fill: parent
-                    anchors.rightMargin: 40
+                    anchors.leftMargin: root.isMac ? 40 : 0
+                    anchors.rightMargin: root.isMac ? 0 : 40
                     property point clickPos
-                    onPressed: clickPos = Qt.point(mouse.x, mouse.y)
-                    onPositionChanged: {
-                        if (pressed) {
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+                    onPressed: (mouse) => {
+                        if (mouse.button === Qt.RightButton) {
+                            root.closeRequested()
+                            return
+                        }
+                        clickPos = Qt.point(mouse.x, mouse.y)
+                    }
+                    onPositionChanged: (mouse) => {
+                        if (pressed && mouse.button === Qt.LeftButton) {
                             var delta = Qt.point(mouse.x - clickPos.x, mouse.y - clickPos.y)
                             root.x += delta.x
                             root.y += delta.y
@@ -143,7 +189,7 @@ Window {
                                 Layout.fillWidth: true
                             }
                             Text {
-                                text: root.isCompleted ? "Przesylanie zakonczone" : root.fileSize + " \u2022 " + root.uploadSpeed
+                                text: root.isCompleted ? (settingsManager.translationContext, settingsManager.qsTr("upload_finished")) : root.fileSize + " \u2022 " + root.uploadSpeed
                                 color: root.isCompleted ? Theme.success : Theme.mutedForeground
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSizeSmall
@@ -161,24 +207,6 @@ Window {
                             value: root.uploadProgress
                             barHeight: 6
                         }
-                        
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Text {
-                                text: Math.floor(root.uploadProgress * 100) + "%"
-                                color: Theme.primary
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSizeSmall
-                                font.weight: Font.Bold
-                            }
-                            Item { Layout.fillWidth: true }
-                            Text {
-                                text: root.uploadSpeed
-                                color: Theme.mutedForeground
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSizeSmall
-                            }
-                        }
                     }
                     
                     ColumnLayout {
@@ -194,11 +222,12 @@ Window {
                                 Layout.fillWidth: true
                                 height: 36
                                 radius: Theme.radiusNormal
-                                color: Theme.secondary
+                                color: Theme.input
                                 border.width: 1
                                 border.color: Theme.border
                                 
                                 TextInput {
+                                    id: popupUrlInput
                                     anchors.fill: parent
                                     anchors.leftMargin: Theme.spacingNormal
                                     anchors.rightMargin: Theme.spacingNormal
@@ -209,6 +238,8 @@ Window {
                                     font.pixelSize: Theme.fontSizeSmall
                                     readOnly: true
                                     selectByMouse: true
+                                    selectionColor: Theme.primary
+                                    selectedTextColor: "#ffffff"
                                 }
                             }
                             
@@ -223,7 +254,7 @@ Window {
                                     anchors.centerIn: parent
                                     spacing: 4
                                     Text { text: copyBtn.copied ? "\u2713" : "\uD83D\uDCCB"; color: "#ffffff"; font.pixelSize: 12 }
-                                    Text { text: copyBtn.copied ? "Gotowe" : "Kopiuj"; color: "#ffffff"; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Medium }
+                                    Text { text: copyBtn.copied ? (settingsManager.translationContext, settingsManager.qsTr("done")) : (settingsManager.translationContext, settingsManager.qsTr("copy")); color: "#ffffff"; font.family: Theme.fontFamily; font.pixelSize: Theme.fontSizeSmall; font.weight: Font.Medium }
                                 }
                                 
                                 MouseArea {
@@ -234,6 +265,7 @@ Window {
                                     onClicked: {
                                         root.copyClicked()
                                         copyBtn.copied = true
+                                        popupUrlInput.selectAll()
                                         autoCloseTimer.start()
                                     }
                                 }
@@ -241,7 +273,7 @@ Window {
                         }
                         
                         Text {
-                            text: "Link skopiowano do schowka"
+                            text: (settingsManager.translationContext, settingsManager.qsTr("link_copied"))
                             visible: copyBtn.copied
                             color: Theme.success
                             font.family: Theme.fontFamily

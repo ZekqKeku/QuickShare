@@ -13,10 +13,15 @@ UploadController::UploadController(QObject *parent)
     , m_currentReply(nullptr)
     , m_currentFile(nullptr)
     , m_isUploading(false)
+    , m_isApiValid(false)
     , m_progress(0.0)
     , m_lastBytesSent(0)
     , m_lastTimestamp(0)
 {
+    m_validationTimer = new QTimer(this);
+    m_validationTimer->setInterval(10 * 60 * 1000); 
+    connect(m_validationTimer, &QTimer::timeout, this, &UploadController::onValidationTimer);
+    m_validationTimer->start();
 }
 
 UploadController::~UploadController()
@@ -24,9 +29,55 @@ UploadController::~UploadController()
     cancelUpload();
 }
 
+void UploadController::onValidationTimer()
+{
+    if (!m_apiKey.isEmpty()) {
+        validateApiKey();
+    }
+}
+
 void UploadController::setApiKey(const QString &apiKey)
 {
-    m_apiKey = apiKey;
+    if (m_apiKey != apiKey) {
+        m_apiKey = apiKey;
+        validateApiKey();
+        
+        if (m_validationTimer->isActive()) {
+            m_validationTimer->start();
+        }
+    }
+}
+
+void UploadController::validateApiKey()
+{
+    if (m_apiKey.isEmpty()) {
+        m_isApiValid = false;
+        emit isApiValidChanged();
+        return;
+    }
+
+    QNetworkRequest request(QUrl("https://pixeldrain.com/api/user"));
+    QString credentials = QString(":%1").arg(m_apiKey);
+    QByteArray base64Credentials = credentials.toUtf8().toBase64();
+    request.setRawHeader("Authorization", "Basic " + base64Credentials);
+
+    QNetworkReply *reply = m_networkManager->get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        bool wasValid = m_isApiValid;
+        m_isApiValid = (reply->error() == QNetworkReply::NoError);
+        if (wasValid != m_isApiValid) {
+            emit isApiValidChanged();
+        }
+        reply->deleteLater();
+    });
+}
+
+void UploadController::clearLastUpload()
+{
+    m_lastUploadUrl = "";
+    m_currentFileName = "";
+    emit lastUploadUrlChanged();
+    emit currentFileNameChanged();
 }
 
 void UploadController::uploadFile(const QString &filePath)
@@ -43,7 +94,9 @@ void UploadController::uploadFile(const QString &filePath)
     }
     
     m_currentFileName = fileInfo.fileName();
+    m_currentFileSize = formatFileSize(fileInfo.size());
     emit currentFileNameChanged();
+    emit currentFileSizeChanged();
     
     m_currentFile = new QFile(filePath);
     if (!m_currentFile->open(QIODevice::ReadOnly)) {

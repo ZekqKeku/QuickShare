@@ -7,8 +7,8 @@ import QuickShare 1.0
 WindowFrame {
     id: root
     
-    title: "QuickShare"
-    subtitle: tabBar.currentIndex === 0 ? "Przeslij" : "Ustawienia"
+    title: (settingsManager.translationContext, settingsManager.qsTr("app_title"))
+    subtitle: tabBar.currentIndex === 0 ? (settingsManager.translationContext, settingsManager.qsTr("upload_tab")) : (settingsManager.translationContext, settingsManager.qsTr("settings_tab"))
     
     onMinimizeClicked: Window.window.showMinimized()
     onMaximizeClicked: {
@@ -61,7 +61,7 @@ WindowFrame {
                                 }
                                 
                                 Text {
-                                    text: "Przeslij"
+                                    text: (settingsManager.translationContext, settingsManager.qsTr("upload_tab"))
                                     color: tabBar.currentIndex === 0 ? Theme.primary : Theme.mutedForeground
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSizeNormal
@@ -83,7 +83,7 @@ WindowFrame {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onClicked: tabBar.currentIndex = 0
+                            onClicked: (mouse) => tabBar.currentIndex = 0
                         }
                     }
                     
@@ -109,7 +109,7 @@ WindowFrame {
                                 }
                                 
                                 Text {
-                                    text: "Ustawienia"
+                                    text: (settingsManager.translationContext, settingsManager.qsTr("settings_tab"))
                                     color: tabBar.currentIndex === 1 ? Theme.primary : Theme.mutedForeground
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSizeNormal
@@ -131,7 +131,7 @@ WindowFrame {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onClicked: tabBar.currentIndex = 1
+                            onClicked: (mouse) => tabBar.currentIndex = 1
                         }
                     }
                     
@@ -159,29 +159,28 @@ WindowFrame {
                     uploadedFileUrl: uploadManager.lastUploadUrl
                     uploadedFileName: uploadManager.currentFileName
                     
-                    onFilesDropped: {
-                        uploadManager.uploadFiles(urls)
+                    onFilesDropped: (urls) => {
+                        var paths = []
+                        for (var i = 0; i < urls.length; i++) {
+                            var urlStr = urls[i].toString()
+                            if (urlStr.startsWith("file://")) {
+                                
+                                urlStr = urlStr.substring(7)
+                                
+                                if (Qt.platform.os === "windows" && urlStr.startsWith("/")) {
+                                    urlStr = urlStr.substring(1)
+                                }
+                            }
+                            paths.push(decodeURIComponent(urlStr))
+                        }
+                        uploadManager.uploadFiles(paths)
                     }
                 }
                 
                 SettingsPanel {
                     id: settingsPanel
-                    
-                    apiKey: settingsManager.apiKey
-                    language: settingsManager.language
-                    startWithSystem: settingsManager.startWithSystem
-                    minimizeToTray: settingsManager.minimizeToTray
-                    
-                    onSettingsSaved: {
-                        settingsManager.apiKey = apiKey
-                        settingsManager.language = language
-                        settingsManager.startWithSystem = startWithSystem
-                        settingsManager.minimizeToTray = minimizeToTray
-                        settingsManager.save()
-                    }
-                    
-                    onSettingsReset: {
-                        settingsManager.resetToDefaults()
+                    onRemoveAllDataRequested: {
+                        settingsManager.removeAllData()
                     }
                 }
             }

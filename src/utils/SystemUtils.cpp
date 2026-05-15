@@ -76,20 +76,20 @@ void SystemUtils::registerContextMenu(bool enabled) {
     QString appName = "QuickShare";
 
 #ifdef Q_OS_WIN
-    QString shellKeyFiles = "HKEY_CURRENT_USER\\Software\\Classes\\*\\shell\\" + appName;
-    QString shellKeyDirs = "HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\" + appName;
-
-    QSettings regFiles(shellKeyFiles, QSettings::NativeFormat);
-    QSettings regDirs(shellKeyDirs, QSettings::NativeFormat);
-
     if (enabled) {
+        QString shellKeyFiles = "HKEY_CURRENT_USER\\Software\\Classes\\*\\shell\\" + appName;
+        QString shellKeyDirs = "HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell\\" + appName;
+        QSettings regFiles(shellKeyFiles, QSettings::NativeFormat);
+        QSettings regDirs(shellKeyDirs, QSettings::NativeFormat);
         regFiles.setValue(".", "Share via QuickShare");
-        regFiles.setValue("command/.", "\"" + appPath + "\" \"%1\"");
+        regFiles.setValue("command/.", "\"" + appPath + "\" --background \"%1\"");
         regDirs.setValue(".", "Share via QuickShare");
-        regDirs.setValue("command/.", "\"" + appPath + "\" \"%1\"");
+        regDirs.setValue("command/.", "\"" + appPath + "\" --background \"%1\"");
     } else {
-        regFiles.remove("");
-        regDirs.remove("");
+        QSettings regFilesParent("HKEY_CURRENT_USER\\Software\\Classes\\*\\shell", QSettings::NativeFormat);
+        regFilesParent.remove(appName);
+        QSettings regDirsParent("HKEY_CURRENT_USER\\Software\\Classes\\Directory\\shell", QSettings::NativeFormat);
+        regDirsParent.remove(appName);
     }
 #elif defined(Q_OS_MAC)
     QString destPath = QDir::homePath() + "/Library/Services/Share via QuickShare.workflow";
@@ -124,7 +124,7 @@ void SystemUtils::registerContextMenu(bool enabled) {
                 << "      <key>action</key>\n      <dict>\n"
                 << "        <key>ActionParameters</key>\n        <dict>\n"
                 << "          <key>COMMAND_STRING</key>\n"
-                << "          <string>\"" << appPath << "\" \"$@\"</string>\n"
+                << "          <string>\"" << appPath << "\" --background \"$@\"</string>\n"
                 << "          <key>inputMethod</key>\n          <integer>1</integer>\n"
                 << "        </dict>\n"
                 << "        <key>ActionBundlePath</key>\n        <string>/System/Library/Automator/Run Shell Script.action</string>\n"
@@ -135,10 +135,10 @@ void SystemUtils::registerContextMenu(bool enabled) {
                 << "    <key>workflowTypeIdentifier</key>\n    <string>com.apple.Automator.servicesMenu</string>\n"
                 << "  </dict>\n</dict>\n</plist>";
         }
-        QProcess::execute("killall", {"pbs"});
+        QProcess::execute("bash", {"-c", "killall pbs 2>/dev/null || true"});
     } else {
         QProcess::execute("rm", {"-rf", destPath});
-        QProcess::execute("killall", {"pbs"});
+        QProcess::execute("bash", {"-c", "killall pbs 2>/dev/null || true"});
     }
 #elif defined(Q_OS_LINUX)
     QString desktopPath = QDir::homePath() + "/.local/share/applications/com.quickshare.app.desktop";
