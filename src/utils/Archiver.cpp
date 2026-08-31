@@ -10,16 +10,20 @@ QString Archiver::createZip(const QStringList &paths, const QString &outputZipPa
     QProcess process;
     QStringList arguments;
 
+    QFileInfo firstFileInfo(paths.first());
+    QString workingDir = firstFileInfo.absolutePath();
+    process.setWorkingDirectory(workingDir);
+
 #ifdef Q_OS_WIN
-    arguments << "-a" << "-c" << "-f" << QDir::toNativeSeparators(outputZipPath);
+    arguments << "-a" << "-c" << "--force-local" << "-f" << QDir::toNativeSeparators(outputZipPath);
     for (const QString &path : paths) {
-        arguments << QDir::toNativeSeparators(path);
+        arguments << QDir::toNativeSeparators(QDir(workingDir).relativeFilePath(path));
     }
     process.start("tar", arguments);
 #else
     arguments << "-r" << outputZipPath; 
     for (const QString &path : paths) {
-        arguments << path;
+        arguments << QDir(workingDir).relativeFilePath(path);
     }
     process.start("zip", arguments);
 #endif
