@@ -100,6 +100,30 @@ target_link_libraries(QuickShare PRIVATE
     Qt6::Network
 )
 
+if(APPLE)
+    # Remove AGL framework linkage on macOS as it was removed in newer SDKs (Xcode 16+)
+    # Qt6's OpenGL dependency adds this, so we need to filter it out.
+    if(TARGET Qt6::Gui)
+        get_target_property(gui_libs Qt6::Gui INTERFACE_LINK_LIBRARIES)
+        if(gui_libs)
+            list(REMOVE_ITEM gui_libs "-framework AGL")
+            set_target_properties(Qt6::Gui PROPERTIES INTERFACE_LINK_LIBRARIES "${gui_libs}")
+        endif()
+    endif()
+
+    # Also strip from WrapOpenGL if it's there
+    if(TARGET WrapOpenGL::WrapOpenGL)
+        get_target_property(opengl_libs WrapOpenGL::WrapOpenGL INTERFACE_LINK_LIBRARIES)
+        if(opengl_libs)
+            list(REMOVE_ITEM opengl_libs "-framework AGL")
+            set_target_properties(WrapOpenGL::WrapOpenGL PROPERTIES INTERFACE_LINK_LIBRARIES "${opengl_libs}")
+        endif()
+    endif()
+
+    # In some CMake setups, adding "-Wl,-U,_agl*" can help ignore undefined AGL symbols if it somehow still links
+    # But removing it from the interface libs is usually enough.
+endif()
+
 include(FetchContent)
 FetchContent_Declare(
   googletest
